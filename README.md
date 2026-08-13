@@ -19,6 +19,8 @@ npm install
 npx expo start --tunnel
 ```
 
+`@expo/ngrok` is a project devDependency so Expo CLI does not need a global `npm install -g @expo/ngrok`. That global install often fails with npm exit 243 in environments that cannot write to the global prefix.
+
 Then scan the QR code in Expo Go. Use **tunnel** if you see “check internet connectivity” — that alert means the phone cannot reach Metro on your LAN, not that Clarity itself is offline.
 
 Same Wi‑Fi, Expo Go → Settings → **Local Network** on, and a matching SDK are the other usual requirements.
