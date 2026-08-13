@@ -1,9 +1,42 @@
+import type { MeasurementSystem } from './services/units';
+
 export type Dominance = 'left' | 'right' | 'mixed';
 export type MobilityGrade = 'full' | 'limited' | 'restricted';
+export type TpiGrade = MobilityGrade | 'skipped';
 export type ClipType = 'dtl_air' | 'fo_air' | 'dtl_real' | 'fo_real';
 export type FocusArea = 'setup_grip' | 'tempo' | 'axis_center' | 'swing_path';
 export type FairwayMiss = 'L' | 'H' | 'R' | null;
 export type TransferStep = 1 | 2 | 3 | 4;
+
+export type TpiTestKey =
+  | 'pelvic_tilt'
+  | 'pelvic_rotation'
+  | 'torso_rotation'
+  | 'overhead_deep_squat'
+  | 'toe_touch'
+  | 'ninety_ninety'
+  | 'single_leg_balance'
+  | 'lat_length'
+  | 'lower_quarter_rotation'
+  | 'seated_trunk_rotation'
+  | 'cervical_rotation'
+  | 'bridge_leg_extension'
+  | 'forearm_rotation'
+  | 'wrist_hinge'
+  | 'wrist_flexion'
+  | 'reach_roll_lift';
+
+export interface TpiResult {
+  key: TpiTestKey;
+  grade: TpiGrade;
+  videoUri: string | null;
+  remoteUrl: string | null;
+  notes: string;
+  leftGrade?: MobilityGrade;
+  rightGrade?: MobilityGrade;
+}
+
+export type TpiResults = Partial<Record<TpiTestKey, TpiResult>>;
 
 export const CLIP_FLOW: {
   type: ClipType;
@@ -108,12 +141,16 @@ export interface Profile {
   flow_streak: number;
   last_habit_date: string | null;
   is_admin: boolean;
+  measurement_system: MeasurementSystem;
+  location_country: string | null;
+  location_consent: boolean;
 }
 
 export interface MobilityScreen extends MobilityScores {
   id: string;
   user_id: string;
   notes: Record<string, string>;
+  tpi: TpiResults;
   created_at: string;
 }
 

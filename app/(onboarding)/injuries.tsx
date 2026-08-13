@@ -9,7 +9,7 @@ export default function InjuriesScreen() {
   const injuries = draft.injuries;
   return (
     <Screen>
-      <ProgressDots step={2} total={6} />
+      <ProgressDots step={3} total={7} />
       <Kicker>Capability first</Kicker>
       <Title>What should we protect?</Title>
       <Body muted>

@@ -27,7 +27,7 @@ export default function AccountScreen() {
 
   return (
     <Screen>
-      <Kicker>Step 1 of 6</Kicker>
+      <Kicker>Step 2 of 7</Kicker>
       <Title>Who is swinging?</Title>
       <Body muted>
         An account syncs mobility screens and swing sessions to Supabase. You can also continue on this device and

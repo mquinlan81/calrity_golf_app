@@ -8,7 +8,7 @@ export default function EyeDominanceScreen() {
   const { setDraft } = useApp();
   return (
     <Screen>
-      <ProgressDots step={3} total={6} />
+      <ProgressDots step={4} total={7} />
       <Kicker>Ten-second triangle</Kicker>
       <Title>Eye dominance</Title>
       <Body muted>

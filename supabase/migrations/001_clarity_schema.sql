@@ -20,6 +20,9 @@ create table if not exists public.profiles (
   flow_streak integer not null default 0,
   last_habit_date date,
   is_admin boolean not null default false,
+  measurement_system text not null default 'metric',
+  location_country text,
+  location_consent boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -33,6 +36,7 @@ create table if not exists public.mobility_screens (
   shoulder_reach text not null check (shoulder_reach in ('full', 'limited', 'restricted')),
   single_leg_balance text not null check (single_leg_balance in ('full', 'limited', 'restricted')),
   notes jsonb not null default '{}'::jsonb,
+  tpi jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now()
 );
 
@@ -166,6 +170,7 @@ create policy "own lessons" on public.coach_lessons
 insert into storage.buckets (id, name, public)
 values
   ('swing-clips', 'swing-clips', true),
+  ('tpi-clips', 'tpi-clips', true),
   ('scorecards', 'scorecards', true),
   ('coach-lessons', 'coach-lessons', true)
 on conflict (id) do nothing;
@@ -173,6 +178,10 @@ on conflict (id) do nothing;
 create policy "authenticated upload swing-clips"
   on storage.objects for insert to authenticated
   with check (bucket_id = 'swing-clips');
+
+create policy "authenticated upload tpi-clips"
+  on storage.objects for insert to authenticated
+  with check (bucket_id = 'tpi-clips');
 
 create policy "authenticated upload scorecards"
   on storage.objects for insert to authenticated
@@ -184,4 +193,4 @@ create policy "authenticated upload coach-lessons"
 
 create policy "public read media"
   on storage.objects for select
-  using (bucket_id in ('swing-clips', 'scorecards', 'coach-lessons'));
+  using (bucket_id in ('swing-clips', 'tpi-clips', 'scorecards', 'coach-lessons'));

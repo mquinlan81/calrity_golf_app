@@ -1,7 +1,7 @@
 import { supabase } from './supabaseClient';
 
 export async function uploadUri(
-  bucket: 'swing-clips' | 'scorecards' | 'coach-lessons',
+  bucket: 'swing-clips' | 'tpi-clips' | 'scorecards' | 'coach-lessons',
   path: string,
   uri: string,
   contentType: string,

@@ -1,21 +1,27 @@
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import { Body, Button, Card, Kicker, ProgressDots, Screen, Title } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
+import { TPI_TESTS } from '../../src/data/tpi';
 import { mobilityLabel } from '../../src/data/instruction';
+import { correctivesFor, mapTpiToMobility } from '../../src/services/tpi';
 import { MOBILITY_STEPS } from '../../src/types';
 
 export default function CompleteScreen() {
   const router = useRouter();
-  const { draft, completeOnboarding } = useApp();
+  const { peekDraft, completeOnboarding } = useApp();
   const [busy, setBusy] = useState(false);
+  const snapshot = peekDraft();
+  const mobility = mapTpiToMobility(snapshot.tpi);
+  const plans = correctivesFor(snapshot.tpi);
+  const recorded = TPI_TESTS.filter((test) => snapshot.tpi[test.key]?.videoUri).length;
 
   const finish = async () => {
     try {
       setBusy(true);
       await completeOnboarding();
-      router.replace('/');
+      router.replace((plans.length ? '/correctives' : '/') as Href);
     } catch (error) {
       Alert.alert('Onboarding', error instanceof Error ? error.message : 'Could not save.');
     } finally {
@@ -25,18 +31,28 @@ export default function CompleteScreen() {
 
   return (
     <Screen>
-      <ProgressDots step={5} total={6} />
+      <ProgressDots step={6} total={7} />
       <Kicker>Stored in mobility_screens</Kicker>
       <Title>Your envelope</Title>
       <Body muted>
-        These grades travel with every diagnosis. Restricted does not mean “wrong.” It means the drill will be fitted.
+        {recorded} of {TPI_TESTS.length} tests recorded. Restricted does not mean “wrong.” It means the swing will be
+        fitted, and stretches will be offered — never a penalty.
       </Body>
       {MOBILITY_STEPS.map((step) => (
         <Card key={step.key}>
           <Kicker>{step.title}</Kicker>
-          <Body>{mobilityLabel(draft.mobility[step.key])}</Body>
+          <Body>{mobilityLabel(mobility[step.key])}</Body>
         </Card>
       ))}
+      {plans.length ? (
+        <Card>
+          <Kicker>Correctives waiting</Kicker>
+          <Body>
+            {plans.length} screen{plans.length === 1 ? '' : 's'} have a stretch or exercise attached. You can open them
+            after you enter the app.
+          </Body>
+        </Card>
+      ) : null}
       <Button label={busy ? 'Saving…' : 'Enter Clarity'} onPress={finish} disabled={busy} />
     </Screen>
   );

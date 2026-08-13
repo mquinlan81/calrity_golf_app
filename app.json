@@ -16,9 +16,10 @@
       "supportsTablet": true,
       "bundleIdentifier": "golf.clarity.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Clarity uses the camera to capture air swings, real swings, and paper scorecards.",
-        "NSMicrophoneUsageDescription": "Clarity records audio with swing videos and coach lessons.",
-        "NSPhotoLibraryUsageDescription": "Clarity lets you choose swing videos, scorecard photos, and coach lesson files."
+        "NSCameraUsageDescription": "Clarity records TPI physical screens, air swings, real swings, and paper scorecards.",
+        "NSMicrophoneUsageDescription": "Clarity records audio with TPI screens, swing videos, and coach lessons.",
+        "NSPhotoLibraryUsageDescription": "Clarity lets you choose swing videos, scorecard photos, and coach lesson files.",
+        "NSLocationWhenInUseUsageDescription": "Clarity uses your location once to set Metric or Imperial units (height and putting distance). We do not track you on the course."
       }
     },
     "android": {
@@ -33,6 +34,8 @@
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
         "READ_EXTERNAL_STORAGE",
         "READ_MEDIA_IMAGES",
         "READ_MEDIA_VIDEO"
@@ -51,7 +54,21 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Clarity records audio with swing videos and coach lessons."
+          "microphonePermission": "Clarity records audio with TPI screens, swing videos, and coach lessons."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Clarity records each TPI physical screen and your golf swing.",
+          "microphonePermission": "Clarity records audio with TPI screens and swing videos.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Clarity uses your location once to set Metric or Imperial units. We do not track you on the course."
         }
       ],
       "expo-splash-screen"

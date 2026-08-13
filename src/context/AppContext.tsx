@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -13,6 +14,8 @@ import { createId, readJson, storageKeys, writeJson } from '../lib/localStore';
 import { uploadUri } from '../lib/upload';
 import { diagnoseSwing } from '../services/diagnostics';
 import { BASELINE_XP, HABIT_XP, nextStreak, todayISO } from '../services/habits';
+import { mapTpiToMobility } from '../services/tpi';
+import type { MeasurementSystem } from '../services/units';
 import type {
   Diagnosis,
   InjuryFlags,
@@ -20,6 +23,7 @@ import type {
   MobilityScores,
   Profile,
   SwingClip,
+  TpiResults,
 } from '../types';
 
 const emptyInjuries = (): InjuryFlags => ({
@@ -38,6 +42,10 @@ export interface OnboardingDraft {
   injuries: InjuryFlags;
   mobility: MobilityScores;
   mobilityNotes: Record<string, string>;
+  tpi: TpiResults;
+  measurementSystem: MeasurementSystem;
+  locationCountry: string | null;
+  locationConsent: boolean;
 }
 
 const defaultMobility = (): MobilityScores => ({
@@ -57,6 +65,10 @@ export const emptyDraft = (): OnboardingDraft => ({
   injuries: emptyInjuries(),
   mobility: defaultMobility(),
   mobilityNotes: {},
+  tpi: {},
+  measurementSystem: 'metric',
+  locationCountry: null,
+  locationConsent: false,
 });
 
 interface AppContextValue {
@@ -68,10 +80,13 @@ interface AppContextValue {
   diagnosis: Diagnosis | null;
   draft: OnboardingDraft;
   setDraft: (patch: Partial<OnboardingDraft>) => void;
+  peekDraft: () => OnboardingDraft;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  saveTpiScreen: (tpi: TpiResults) => Promise<void>;
+  setMeasurementSystem: (system: MeasurementSystem) => Promise<void>;
   saveClip: (clip: SwingClip) => Promise<void>;
   resetClips: () => Promise<void>;
   runDiagnosis: (flags: {
@@ -101,6 +116,9 @@ function localProfile(id: string, draft: OnboardingDraft, extras?: Partial<Profi
     flow_streak: 0,
     last_habit_date: null,
     is_admin: false,
+    measurement_system: draft.measurementSystem,
+    location_country: draft.locationCountry,
+    location_consent: draft.locationConsent,
     ...extras,
   };
 }
@@ -113,6 +131,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [clips, setClips] = useState<SwingClip[]>([]);
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   const [draft, setDraftState] = useState<OnboardingDraft>(emptyDraft());
+  const draftRef = useRef<OnboardingDraft>(emptyDraft());
 
   const persistProfile = useCallback(async (next: Profile) => {
     setProfile(next);
@@ -135,6 +154,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           flow_streak: next.flow_streak,
           last_habit_date: next.last_habit_date,
           is_admin: next.is_admin,
+          measurement_system: next.measurement_system,
+          location_country: next.location_country,
+          location_consent: next.location_consent,
           updated_at: new Date().toISOString(),
         }),
       );
@@ -153,11 +175,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
         supabase.auth.getSession(),
       ]);
       if (!alive) return;
-      setProfile(savedProfile);
-      setMobility(savedMobility);
+      setProfile(
+        savedProfile
+          ? {
+              ...savedProfile,
+              measurement_system: savedProfile.measurement_system ?? 'metric',
+              location_country: savedProfile.location_country ?? null,
+              location_consent: savedProfile.location_consent ?? false,
+            }
+          : null,
+      );
+      setMobility(
+        savedMobility
+          ? { ...savedMobility, tpi: savedMobility.tpi ?? {} }
+          : null,
+      );
       setClips(savedClips);
       setDiagnosis(savedDx);
-      setDraftState(savedDraft);
+      setDraftState({ ...emptyDraft(), ...savedDraft, tpi: savedDraft.tpi ?? {} });
+      draftRef.current = { ...emptyDraft(), ...savedDraft, tpi: savedDraft.tpi ?? {} };
       setSession(data.session);
       setLoading(false);
     })();
@@ -174,10 +210,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setDraft = useCallback((patch: Partial<OnboardingDraft>) => {
     setDraftState((current) => {
       const next = { ...current, ...patch };
+      draftRef.current = next;
       void writeJson(storageKeys.draft, next);
       return next;
     });
   }, []);
+
+  const peekDraft = useCallback(() => draftRef.current, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -199,18 +238,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const completeOnboarding = useCallback(async () => {
+    const snapshot = draftRef.current;
     const userId = session?.user.id ?? profile?.id ?? createId('user');
-    const nextProfile = localProfile(userId, draft, {
+    const mobilityScores = mapTpiToMobility(snapshot.tpi);
+    const nextProfile = localProfile(userId, { ...snapshot, mobility: mobilityScores }, {
       xp: profile?.xp ?? 0,
       flow_streak: profile?.flow_streak ?? 0,
       last_habit_date: profile?.last_habit_date ?? null,
       is_admin: profile?.is_admin ?? false,
+      measurement_system: snapshot.measurementSystem,
+      location_country: snapshot.locationCountry,
+      location_consent: snapshot.locationConsent,
     });
     const nextMobility: MobilityScreen = {
       id: createId('mob'),
       user_id: userId,
-      ...draft.mobility,
-      notes: draft.mobilityNotes,
+      ...mobilityScores,
+      notes: snapshot.mobilityNotes,
+      tpi: snapshot.tpi,
       created_at: new Date().toISOString(),
     };
     await persistProfile(nextProfile);
@@ -226,10 +271,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
           shoulder_reach: nextMobility.shoulder_reach,
           single_leg_balance: nextMobility.single_leg_balance,
           notes: nextMobility.notes,
+          tpi: nextMobility.tpi,
         }),
       );
     }
-  }, [draft, persistProfile, profile, session]);
+  }, [persistProfile, profile, session]);
+
+  const saveTpiScreen = useCallback(
+    async (tpi: TpiResults) => {
+      setDraft({ tpi, mobility: mapTpiToMobility(tpi) });
+      const scores = mapTpiToMobility(tpi);
+      const userId = session?.user.id ?? profile?.id ?? createId('user');
+      const nextMobility: MobilityScreen = {
+        id: mobility?.id ?? createId('mob'),
+        user_id: userId,
+        ...scores,
+        notes: draft.mobilityNotes,
+        tpi,
+        created_at: new Date().toISOString(),
+      };
+      setMobility(nextMobility);
+      await writeJson(storageKeys.mobility, nextMobility);
+      if (session?.user.id) {
+        await syncRemote(() =>
+          supabase.from('mobility_screens').insert({
+            user_id: session.user.id,
+            thoracic_spine_turn: nextMobility.thoracic_spine_turn,
+            pelvic_separation: nextMobility.pelvic_separation,
+            hip_rotation: nextMobility.hip_rotation,
+            shoulder_reach: nextMobility.shoulder_reach,
+            single_leg_balance: nextMobility.single_leg_balance,
+            notes: nextMobility.notes,
+            tpi: nextMobility.tpi,
+          }),
+        );
+      }
+    },
+    [draft.mobilityNotes, mobility?.id, profile?.id, session, setDraft],
+  );
+
+  const setMeasurementSystem = useCallback(
+    async (system: MeasurementSystem) => {
+      setDraft({ measurementSystem: system });
+      if (profile) {
+        await persistProfile({ ...profile, measurement_system: system });
+      }
+    },
+    [persistProfile, profile, setDraft],
+  );
 
   const saveClip = useCallback(async (clip: SwingClip) => {
     setClips((current) => {
@@ -367,10 +456,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       diagnosis,
       draft,
       setDraft,
+      peekDraft,
       signIn,
       signUp,
       signOut,
       completeOnboarding,
+      saveTpiScreen,
+      setMeasurementSystem,
       saveClip,
       resetClips,
       runDiagnosis,
@@ -387,10 +479,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       diagnosis,
       draft,
       setDraft,
+      peekDraft,
       signIn,
       signUp,
       signOut,
       completeOnboarding,
+      saveTpiScreen,
+      setMeasurementSystem,
       saveClip,
       resetClips,
       runDiagnosis,

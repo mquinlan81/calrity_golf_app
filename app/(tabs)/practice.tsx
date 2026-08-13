@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { type Href, useRouter } from 'expo-router';
 import { Body, Button, Card, Kicker, Screen, Title } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 import { DRILLS } from '../../src/data/instruction';
@@ -33,6 +33,7 @@ export default function PracticeScreen() {
         <Body>{plan.pile3Focus}</Body>
         <Button label="Open full plan" variant="secondary" onPress={() => router.push('/range-plan')} />
       </Card>
+      <Button label="TPI correctives" variant="ghost" onPress={() => router.push('/correctives' as Href)} />
       <Button label="Practice journal" variant="ghost" onPress={() => router.push('/journal')} />
     </Screen>
   );

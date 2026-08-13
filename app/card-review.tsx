@@ -5,11 +5,13 @@ import { Body, Button, Card, Chip, Field, Kicker, Screen, Title } from '../src/c
 import { useApp } from '../src/context/AppContext';
 import { createId, readJson, storageKeys, writeJson } from '../src/lib/localStore';
 import { emptyCard, parseScorecardText, scorecardMetrics } from '../src/services/ocr';
+import { displayPuttInput, parsePuttInput, puttFieldLabel } from '../src/services/units';
 import type { FairwayMiss, ScorecardHole } from '../src/types';
 
 export default function CardReviewScreen() {
   const router = useRouter();
-  const { saveRemote } = useApp();
+  const { saveRemote, profile, draft } = useApp();
+  const system = profile?.measurement_system ?? draft.measurementSystem;
   const params = useLocalSearchParams<{ photo?: string; course?: string }>();
   const [raw, setRaw] = useState('');
   const [holes, setHoles] = useState<ScorecardHole[]>(emptyCard(9));
@@ -92,10 +94,10 @@ export default function CardReviewScreen() {
             </View>
             <View style={{ flex: 1 }}>
               <Field
-                label="1st putt ft"
-                keyboardType="number-pad"
-                value={hole.firstPuttFt?.toString() ?? ''}
-                onChangeText={(value) => patch(index, { firstPuttFt: Number(value) || null })}
+                label={puttFieldLabel(system)}
+                keyboardType="decimal-pad"
+                value={displayPuttInput(hole.firstPuttFt, system)}
+                onChangeText={(value) => patch(index, { firstPuttFt: parsePuttInput(value, system) })}
               />
             </View>
           </View>
