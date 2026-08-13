@@ -6,11 +6,22 @@ Clarity is built on Ernest Jones and Manuel de la Torre: the swing is **continuo
 
 ## Stack
 
-- Expo (SDK 57) + Expo Router
+- Expo **SDK 54** + Expo Router (matches the App Store Expo Go app)
 - `@supabase/supabase-js` client in `src/lib/supabaseClient.ts`
 - Local-first storage with optional Supabase sync
 
-## Run
+## Run on iPhone (Expo Go 54)
+
+The App Store copy of Expo Go is SDK 54. This project is pinned to that SDK.
+
+```bash
+npm install
+npx expo start --tunnel
+```
+
+Then scan the QR code in Expo Go. Use **tunnel** if you see “check internet connectivity” — that alert means the phone cannot reach Metro on your LAN, not that Clarity itself is offline.
+
+Same Wi‑Fi, Expo Go → Settings → **Local Network** on, and a matching SDK are the other usual requirements.
 
 ```bash
 npm install
