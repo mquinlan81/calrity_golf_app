@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Clarity",
+    "slug": "clarity-golf",
+    "scheme": "clarity",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1E2A23"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "golf.clarity.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Clarity uses the camera to capture air swings, real swings, and paper scorecards.",
+        "NSMicrophoneUsageDescription": "Clarity records audio with swing videos and coach lessons.",
+        "NSPhotoLibraryUsageDescription": "Clarity lets you choose swing videos, scorecard photos, and coach lesson files."
+      }
+    },
+    "android": {
+      "package": "golf.clarity.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1E2A23",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "expo-image-picker",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Clarity records audio with swing videos and coach lessons."
+        }
+      ],
+      "expo-splash-screen"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
