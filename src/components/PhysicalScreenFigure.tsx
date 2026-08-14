@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Text, View, StyleSheet } from 'react-native';
 import Svg, { Circle, G, Line, Path, Polyline } from 'react-native-svg';
 import { screenMeta, type ScreenPose } from '../data/physicalScreenMeta';
@@ -6,24 +7,26 @@ import { colors, fonts } from '../theme';
 
 export function PhysicalScreenFigure({ testKey }: { testKey: TpiTestKey }) {
   const meta = screenMeta(testKey);
+  const [action, setAction] = useState(false);
+
+  useEffect(() => {
+    setAction(false);
+    const id = setInterval(() => setAction((value) => !value), 750);
+    return () => clearInterval(id);
+  }, [testKey]);
+
   return (
     <View style={styles.wrap}>
-      <View style={styles.panel}>
-        <PoseSvg pose={meta.startPose} />
-        <Text style={styles.caption}>{meta.startCaption}</Text>
-      </View>
-      <Text style={styles.arrow}>→</Text>
-      <View style={styles.panel}>
-        <PoseSvg pose={meta.actionPose} />
-        <Text style={styles.caption}>{meta.actionCaption}</Text>
-      </View>
+      <Text style={styles.kicker}>Proper motion — looping</Text>
+      <PoseSvg pose={action ? meta.actionPose : meta.startPose} />
+      <Text style={styles.caption}>{action ? meta.actionCaption : meta.startCaption}</Text>
     </View>
   );
 }
 
 function PoseSvg({ pose }: { pose: ScreenPose }) {
   return (
-    <Svg viewBox="0 0 100 140" width="100%" height={150}>
+    <Svg viewBox="0 0 100 140" width="72%" height={180}>
       <Line x1="18" y1="132" x2="82" y2="132" stroke={colors.fog} strokeWidth="3" />
       <G stroke={colors.ink} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" fill="none">
         {renderPose(pose)}
@@ -255,21 +258,20 @@ function prone(lift: boolean) {
 
 const styles = StyleSheet.create({
   wrap: {
-    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     backgroundColor: colors.paper,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: colors.fog,
     padding: 10,
   },
-  panel: { flex: 1, alignItems: 'center' },
-  arrow: {
-    fontFamily: fonts.display,
-    fontSize: 28,
+  kicker: {
+    fontFamily: fonts.bodyMedium,
     color: colors.gold,
-    marginBottom: 18,
+    letterSpacing: 1.6,
+    textTransform: 'uppercase',
+    fontSize: 11,
+    marginBottom: 4,
   },
   caption: {
     fontFamily: fonts.bodyMedium,

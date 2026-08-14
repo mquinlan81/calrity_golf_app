@@ -1,71 +1,143 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { REFERENCE_MOTIONS, motionCurve } from '../data/referenceMotions';
 import { TPI_TESTS } from '../data/tpi';
 import {
-  FULL_ENERGY,
-  LIMITED_ENERGY,
-  gradeFromEnergy,
-  gradesFromReading,
-  meanAbsDiff,
+  compareToReference,
+  dtwDistance,
+  extractMotionClip,
+  gradeFromScore,
   rationaleFor,
-  readingFromFrames,
+  resample,
   sampleTimesMs,
   skippedResult,
   type GrayFrame,
+  type MotionClip,
 } from './physicalAssessCore';
 
-function frame(values: number[], width = 4, height = 4): GrayFrame {
-  return { width, height, pixels: Float32Array.from(values) };
+function frameFromGrid(cells: number[][]): GrayFrame {
+  const width = 6;
+  const height = 6;
+  const pixels = new Float32Array(width * height);
+  for (let row = 0; row < 3; row += 1) {
+    for (let col = 0; col < 3; col += 1) {
+      const value = cells[row][col];
+      for (let y = row * 2; y < row * 2 + 2; y += 1) {
+        for (let x = col * 2; x < col * 2 + 2; x += 1) {
+          pixels[y * width + x] = value;
+        }
+      }
+    }
+  }
+  return { width, height, pixels };
 }
 
-describe('physical screen AI grading', () => {
-  it('maps motion energy to pass, limited, and restricted', () => {
-    assert.equal(gradeFromEnergy(FULL_ENERGY), 'full');
-    assert.equal(gradeFromEnergy(LIMITED_ENERGY), 'limited');
-    assert.equal(gradeFromEnergy(LIMITED_ENERGY - 0.001), 'restricted');
+function clipFromReference(key: keyof typeof REFERENCE_MOTIONS, scale = 1): MotionClip {
+  const reference = REFERENCE_MOTIONS[key];
+  const scaled = {} as MotionClip;
+  (Object.keys(reference.series) as Array<keyof MotionClip>).forEach((band) => {
+    scaled[band] = reference.series[band].map((value) => value * scale);
+  });
+  return scaled;
+}
+
+describe('physical screen motion matching', () => {
+  it('gives a near-perfect score when the user clip matches the proper-motion reference', () => {
+    const match = compareToReference(clipFromReference('pelvic_tilt'), REFERENCE_MOTIONS.pelvic_tilt);
+    assert.equal(match.grade, 'full');
+    assert.ok(match.score >= 0.62);
   });
 
-  it('reads overall and left/right motion from frame differences', () => {
-    const still = frame(Array(16).fill(0.2));
-    const moved = frame([
-      0.9, 0.9, 0.2, 0.2, 0.9, 0.9, 0.2, 0.2, 0.9, 0.9, 0.2, 0.2, 0.9, 0.9, 0.2, 0.2,
+  it('marks a still clip as restricted against a moving reference', () => {
+    const still: MotionClip = {
+      head: Array(12).fill(0.02),
+      chest: Array(12).fill(0.02),
+      pelvis: Array(12).fill(0.02),
+      arms: Array(12).fill(0.02),
+      legs: Array(12).fill(0.02),
+      left: Array(12).fill(0.02),
+      right: Array(12).fill(0.02),
+    };
+    const match = compareToReference(still, REFERENCE_MOTIONS.pelvic_tilt);
+    assert.equal(match.grade, 'restricted');
+  });
+
+  it('scores a shorter version of the same motion as limited, not a fail-to-pose', () => {
+    const match = compareToReference(clipFromReference('pelvic_tilt', 0.18), REFERENCE_MOTIONS.pelvic_tilt);
+    assert.equal(match.grade, 'limited');
+    assert.ok(match.amplitude < 0.12);
+  });
+
+  it('uses the worse side when left and right motion differ', () => {
+    const clip = clipFromReference('pelvic_rotation');
+    clip.right = Array(12).fill(0.02);
+    const match = compareToReference(clip, REFERENCE_MOTIONS.pelvic_rotation);
+    assert.equal(match.leftGrade, 'full');
+    assert.equal(match.rightGrade, 'restricted');
+    assert.equal(match.grade, 'restricted');
+  });
+
+  it('aligns similar shapes even when the user moves slower', () => {
+    const stretched = resample(
+      motionCurve(8, [
+        [0, 0],
+        [0.5, 1],
+        [1, 0],
+      ]),
+      12,
+    );
+    const compact = motionCurve(12, [
+      [0, 0],
+      [0.3, 1],
+      [1, 0],
     ]);
-    const reading = readingFromFrames([still, moved]);
-    assert.ok(reading.left > reading.right);
-    assert.ok(reading.overall > LIMITED_ENERGY);
+    assert.ok(dtwDistance(stretched, compact) < dtwDistance(stretched, Array(12).fill(0)));
   });
 
-  it('uses the worse side on bilateral screens', () => {
-    const grades = gradesFromReading({ overall: 0.2, left: 0.2, right: 0.02 }, true);
-    assert.equal(grades.leftGrade, 'full');
-    assert.equal(grades.rightGrade, 'restricted');
-    assert.equal(grades.grade, 'restricted');
+  it('reads motion from a sequence of frames, not a single still', () => {
+    const rest = frameFromGrid([
+      [0.2, 0.2, 0.2],
+      [0.2, 0.2, 0.2],
+      [0.2, 0.2, 0.2],
+    ]);
+    const pelvis = frameFromGrid([
+      [0.2, 0.2, 0.2],
+      [0.2, 0.2, 0.2],
+      [0.2, 0.9, 0.2],
+    ]);
+    const clip = extractMotionClip([rest, pelvis, rest]);
+    assert.ok(clip.pelvis[0] > clip.chest[0]);
+    assert.equal(clip.pelvis.length, 2);
+  });
+
+  it('samples a video across time instead of one freeze-frame', () => {
+    const times = sampleTimesMs(8);
+    assert.ok(times.length >= 8);
+    assert.equal(times[0], 0);
+    assert.ok(times[times.length - 1] > times[0]);
   });
 
   it('does not treat a skip as a limitation', () => {
-    const test = TPI_TESTS[0];
-    const skipped = skippedResult(test);
+    const skipped = skippedResult(TPI_TESTS[0]);
     assert.equal(skipped.grade, 'skipped');
     assert.equal(skipped.assessedBy, 'skipped');
   });
 
-  it('describes what was seen after the fact, including uneven sides', () => {
-    const test = TPI_TESTS.find((item) => item.key === 'pelvic_rotation');
-    assert.ok(test);
-    const text = rationaleFor(test, 'limited', { left: 'full', right: 'limited' });
-    assert.match(text, /Left pass, right limited/);
+  it('explains the result as a comparison to proper motion', () => {
+    const test = TPI_TESTS[0];
+    const text = rationaleFor(test, {
+      score: 0.8,
+      amplitude: 0.5,
+      shape: 0.8,
+      isolation: 0.8,
+      grade: 'full',
+    });
+    assert.match(text, /Compared to the proper pelvic tilt motion/);
   });
 
-  it('samples the clip instead of a single freeze-frame', () => {
-    const times = sampleTimesMs(8);
-    assert.equal(times.length, 4);
-    assert.ok(times[0] < times[1]);
-    assert.ok(times[3] < 8000);
-  });
-
-  it('measures brightness change between frames', () => {
-    assert.ok(Math.abs(meanAbsDiff(Float32Array.from([0.1, 0.2]), Float32Array.from([0.1, 0.4])) - 0.1) < 1e-6);
-    const still = frame(Array(16).fill(0.4));
-    assert.equal(readingFromFrames([still]).overall, 0);
+  it('maps match scores onto pass, limited, and restricted', () => {
+    assert.equal(gradeFromScore(0.7), 'full');
+    assert.equal(gradeFromScore(0.4), 'limited');
+    assert.equal(gradeFromScore(0.2), 'restricted');
   });
 });

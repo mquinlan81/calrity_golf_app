@@ -7,7 +7,7 @@ import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native
 import { colors, fonts } from '../theme';
 import { Button } from './ui';
 
-export type CaptureStatus = 'idle' | 'countdown' | 'watching' | 'recording' | 'done';
+export type CaptureStatus = 'idle' | 'countdown' | 'recording' | 'done';
 
 export function GuidedRecorder({
   hint,
@@ -27,12 +27,14 @@ export function GuidedRecorder({
   const cancelledRef = useRef(false);
   const [camPerm, requestCam] = useCameraPermissions();
   const [micPerm, requestMic] = useMicrophonePermissions();
+  const [ready, setReady] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [remaining, setRemaining] = useState(recordSeconds);
   const [uri, setUri] = useState<string | null>(null);
   const [facing, setFacing] = useState<'back' | 'front'>('back');
   const [count, setCount] = useState<number | null>(null);
   const [status, setStatus] = useState<CaptureStatus>('idle');
-  const live = Platform.OS !== 'web' && camPerm?.granted && micPerm?.granted;
+  const live = Platform.OS !== 'web' && Boolean(camPerm?.granted && micPerm?.granted);
 
   const ensurePermissions = async () => {
     const cam = camPerm?.granted ? camPerm : await requestCam();
@@ -40,41 +42,32 @@ export function GuidedRecorder({
     return Boolean(cam.granted && mic.granted);
   };
 
-  const pickFallback = async () => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      const library = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['videos'],
-        quality: 0.6,
-        videoMaxDuration: recordSeconds,
-      });
-      if (!library.canceled) {
-        setUri(library.assets[0].uri);
-        setStatus('done');
-        onRecorded(library.assets[0].uri);
-      }
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
+  const pickVideoLibrary = async () => {
+    const library = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['videos'],
-      videoMaxDuration: recordSeconds,
+      videoMaxDuration: recordSeconds + 4,
       quality: 0.6,
     });
-    if (!result.canceled) {
-      setUri(result.assets[0].uri);
+    if (!library.canceled && library.assets[0]?.uri) {
+      setUri(library.assets[0].uri);
       setStatus('done');
-      onRecorded(result.assets[0].uri);
+      onRecorded(library.assets[0].uri);
     }
   };
 
   const runCountdownAndRecord = async () => {
     if (startedRef.current || uri) return;
     startedRef.current = true;
-    const ok = live || (await ensurePermissions());
+    const ok = await ensurePermissions();
     if (cancelledRef.current) return;
-    if (!ok || Platform.OS === 'web') {
-      await pickFallback();
+    if (!ok) {
       startedRef.current = false;
+      Alert.alert('Camera', 'Clarity needs the camera and microphone to record a short video of this motion.');
+      return;
+    }
+    if (Platform.OS === 'web' || !cameraRef.current) {
+      startedRef.current = false;
+      await pickVideoLibrary();
       return;
     }
     try {
@@ -87,12 +80,16 @@ export function GuidedRecorder({
       }
       if (cancelledRef.current) return;
       setCount(null);
-      setStatus('watching');
-      await delay(450);
-      if (cancelledRef.current) return;
       setStatus('recording');
       setRecording(true);
-      const clip = await cameraRef.current?.recordAsync({ maxDuration: recordSeconds });
+      setRemaining(recordSeconds);
+      const backup = setTimeout(() => {
+        cameraRef.current?.stopRecording();
+      }, (recordSeconds + 0.6) * 1000);
+      const clip = await cameraRef.current.recordAsync({
+        maxDuration: recordSeconds,
+      });
+      clearTimeout(backup);
       setRecording(false);
       if (clip?.uri) {
         setUri(clip.uri);
@@ -101,12 +98,13 @@ export function GuidedRecorder({
       } else {
         startedRef.current = false;
         setStatus('idle');
+        Alert.alert('Video', 'The motion clip did not save. Try again — this needs a short video, not a still.');
       }
     } catch {
       setRecording(false);
       startedRef.current = false;
       setStatus('idle');
-      await pickFallback();
+      Alert.alert('Video', 'Could not record the clip. Keep the phone still on a chair and try again.');
     }
   };
 
@@ -124,23 +122,30 @@ export function GuidedRecorder({
   }, [autoStart]);
 
   useEffect(() => {
-    if (!autoStart || uri || !live) return;
+    if (!autoStart || uri || !live || !ready) return;
     const handle = setTimeout(() => {
       void runCountdownAndRecord();
-    }, 500);
+    }, 350);
     return () => clearTimeout(handle);
-    // Start once the live camera is actually on screen.
+    // Start once the live video camera is actually ready.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoStart, live, uri]);
+  }, [autoStart, live, ready, uri]);
+
+  useEffect(() => {
+    if (!recording) return;
+    setRemaining(recordSeconds);
+    const tick = setInterval(() => {
+      setRemaining((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => clearInterval(tick);
+  }, [recording, recordSeconds]);
 
   const overlay =
     status === 'countdown' && count
       ? String(count)
-      : status === 'watching'
-        ? 'Move'
-        : status === 'recording'
-          ? 'Hold the motion'
-          : null;
+      : status === 'recording'
+        ? `REC  0:${String(remaining).padStart(2, '0')}`
+        : null;
 
   return (
     <View style={styles.wrap}>
@@ -153,9 +158,18 @@ export function GuidedRecorder({
             shouldPlay
             isLooping
             isMuted
+            useNativeControls
           />
         ) : live ? (
-          <CameraView ref={cameraRef} style={StyleSheet.absoluteFill} facing={facing} mode="video" />
+          <CameraView
+            ref={cameraRef}
+            style={StyleSheet.absoluteFill}
+            facing={facing}
+            mode="video"
+            mute={false}
+            videoQuality="720p"
+            onCameraReady={() => setReady(true)}
+          />
         ) : (
           <View style={[StyleSheet.absoluteFill, styles.placeholder]} />
         )}
@@ -167,11 +181,11 @@ export function GuidedRecorder({
         <View style={styles.caption}>
           <Text style={styles.captionText}>
             {facingHint === 'side'
-              ? 'Side-on. Whole body in the box.'
+              ? 'Side-on video. Whole body in the box.'
               : facingHint === 'behind'
                 ? 'Behind the player, or side-on if you are alone.'
                 : 'Facing the phone. Belt and shoulders in frame.'}{' '}
-            {hint}
+            {hint} This is a short video of the motion, not a still photo.
           </Text>
         </View>
       </View>
@@ -182,37 +196,25 @@ export function GuidedRecorder({
       </View>
       {uri ? (
         <Button
-          label="Re-record"
+          label="Re-record video"
           variant="secondary"
           onPress={() => {
             setUri(null);
+            setReady(false);
             startedRef.current = false;
             setStatus('idle');
-            void runCountdownAndRecord();
           }}
         />
       ) : !autoStart ? (
         <Button
-          label={recording ? 'Recording…' : live ? 'Start 3-2-1' : 'Record / choose clip'}
+          label={recording ? 'Recording video…' : 'Start 3-2-1 video'}
           onPress={() => void runCountdownAndRecord()}
           variant={recording ? 'secondary' : 'primary'}
           disabled={recording || status === 'countdown'}
         />
       ) : null}
-      {Platform.OS === 'web' && !uri ? (
-        <Button
-          label="Choose a video file"
-          variant="ghost"
-          onPress={() =>
-            void ImagePicker.launchImageLibraryAsync({ mediaTypes: ['videos'] }).then((result) => {
-              if (!result.canceled) {
-                setUri(result.assets[0].uri);
-                setStatus('done');
-                onRecorded(result.assets[0].uri);
-              }
-            })
-          }
-        />
+      {!uri ? (
+        <Button label="Choose a video file" variant="ghost" onPress={() => void pickVideoLibrary()} />
       ) : null}
       {!camPerm?.granted && Platform.OS !== 'web' ? (
         <Button
@@ -221,7 +223,7 @@ export function GuidedRecorder({
           onPress={() =>
             void ensurePermissions().then((ok) => {
               if (!ok) {
-                Alert.alert('Camera', 'Camera and microphone are used only to record this physical screen.');
+                Alert.alert('Camera', 'Camera and microphone are used only to record this physical screen video.');
               }
             })
           }
@@ -257,7 +259,7 @@ const styles = StyleSheet.create({
   },
   prompt: {
     fontFamily: fonts.display,
-    fontSize: 42,
+    fontSize: 36,
     color: colors.cream,
   },
   caption: {

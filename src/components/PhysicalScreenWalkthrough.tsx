@@ -69,8 +69,9 @@ export function PhysicalScreenWalkthrough({
         <Kicker>Physical Screen</Kicker>
         <Title>16 movements. Your range, not a pose.</Title>
         <Body>
-          Each screen is a short picture and an explanation, then a 3-2-1. Clarity records the movement it sees and
-          reads pass, limited, or restricted. You do not grade yourself. Move the way you move.
+          Each screen is a looping motion, then a 3-2-1 and a short video. Clarity compares your clip to a proper-motion
+          reference for that screen and reads pass, limited, or restricted. You do not grade yourself. Move the way you
+          move.
         </Body>
         <Card>
           <Body muted>
@@ -89,8 +90,11 @@ export function PhysicalScreenWalkthrough({
         <Kicker>
           Screen {test.number} / {TPI_TESTS.length}
         </Kicker>
-        <Title>Reading your range</Title>
-        <Body muted>Clarity is watching the clip for available motion — not for a model position.</Body>
+        <Title>Comparing your video</Title>
+        <Body muted>
+          Clarity is matching this clip against the proper-motion reference — timing, which part moves, and how far it
+          travels. Not a freeze-frame pose.
+        </Body>
         <ActivityIndicator color={colors.gold} />
       </View>
     );
@@ -103,7 +107,7 @@ export function PhysicalScreenWalkthrough({
           Screen {test.number} / {TPI_TESTS.length} · {test.region}
         </Kicker>
         <Title>{test.title}</Title>
-        <Body muted>3-2-1, then move. The recording stops on its own.</Body>
+        <Body muted>3-2-1, then move through the motion. This is a short video. It stops on its own.</Body>
         <GuidedRecorder
           facingHint={test.camera}
           hint={test.setup[test.setup.length - 1] ?? ''}
@@ -115,7 +119,7 @@ export function PhysicalScreenWalkthrough({
         />
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <Button variant="ghost" label="Back to picture" onPress={() => setPhase('brief')} />
+            <Button variant="ghost" label="Back to motion" onPress={() => setPhase('brief')} />
           </View>
           <View style={{ flex: 1 }}>
             <Button variant="ghost" label="Skip this screen" onPress={skip} />
@@ -133,7 +137,7 @@ export function PhysicalScreenWalkthrough({
       <Title>{test.title}</Title>
       <PhysicalScreenFigure testKey={test.key} />
       <Card>
-        <Kicker>How to do it</Kicker>
+        <Kicker>The motion</Kicker>
         <Body>{meta.briefing}</Body>
       </Card>
       <Card>

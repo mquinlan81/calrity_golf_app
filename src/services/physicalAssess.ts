@@ -1,14 +1,15 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import * as VideoThumbnails from 'expo-video-thumbnails';
 import jpeg from 'jpeg-js';
-import type { TpiTest } from '../data/tpi';
+import { referenceMotion } from '../data/referenceMotions';
 import { screenMeta } from '../data/physicalScreenMeta';
+import type { TpiTest } from '../data/tpi';
 import type { TpiResult } from '../types';
 import {
   base64ToBytes,
-  gradesFromReading,
+  compareToReference,
+  extractMotionClip,
   grayFromJpegBytes,
-  readingFromFrames,
   rationaleFor,
   sampleTimesMs,
   skippedResult,
@@ -17,13 +18,9 @@ import {
 } from './physicalAssessCore';
 
 export {
-  FULL_ENERGY,
-  LIMITED_ENERGY,
-  gradeFromEnergy,
-  gradesFromReading,
-  meanAbsDiff,
+  compareToReference,
+  extractMotionClip,
   rationaleFor,
-  readingFromFrames,
   sampleTimesMs,
   skippedResult,
   type GrayFrame,
@@ -32,22 +29,21 @@ export {
 export async function assessPhysicalClip(test: TpiTest, videoUri: string): Promise<TpiResult> {
   try {
     const frames = await framesFromVideo(videoUri, screenMeta(test.key).recordSeconds);
-    if (frames.length < 2) {
+    if (frames.length < 3) {
       return unclearResult(test, videoUri);
     }
-    const reading = readingFromFrames(frames);
-    const grades = gradesFromReading(reading, test.bilateral);
-    const grade = grades.grade === 'full' || grades.grade === 'limited' || grades.grade === 'restricted' ? grades.grade : 'limited';
+    const clip = extractMotionClip(frames);
+    const match = compareToReference(clip, referenceMotion(test.key));
     return {
       key: test.key,
       videoUri,
       remoteUrl: null,
       notes: '',
       assessedBy: 'ai',
-      grade,
-      leftGrade: grades.leftGrade,
-      rightGrade: grades.rightGrade,
-      rationale: rationaleFor(test, grade, { left: grades.leftGrade, right: grades.rightGrade }),
+      grade: match.grade,
+      leftGrade: match.leftGrade,
+      rightGrade: match.rightGrade,
+      rationale: rationaleFor(test, match),
     };
   } catch {
     return unclearResult(test, videoUri);
@@ -58,7 +54,7 @@ async function framesFromVideo(videoUri: string, durationSec: number): Promise<G
   const stamps = sampleTimesMs(durationSec);
   const frames: GrayFrame[] = [];
   for (const time of stamps) {
-    const thumb = await VideoThumbnails.getThumbnailAsync(videoUri, { time, quality: 0.4 });
+    const thumb = await VideoThumbnails.getThumbnailAsync(videoUri, { time, quality: 0.45 });
     const frame = await grayFromImageUri(thumb.uri);
     if (frame) frames.push(frame);
   }
