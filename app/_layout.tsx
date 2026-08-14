@@ -48,6 +48,7 @@ function Gate() {
       <Stack.Screen name="journal" />
       <Stack.Screen name="card-review" />
       <Stack.Screen name="correctives" />
+      <Stack.Screen name="physical-screen" />
       <Stack.Screen name="tpi" />
       <Stack.Screen name="admin" />
     </Stack>

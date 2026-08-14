@@ -1,5 +1,5 @@
 import { TPI_TESTS, type TpiCorrective, type TpiTest, type TpiTestKey } from '../data/tpi';
-import type { MobilityGrade, MobilityScores, TpiResult, TpiResults } from '../types';
+import type { MobilityGrade, MobilityScores, TpiGrade, TpiResult, TpiResults } from '../types';
 
 export function emptyTpiResults(): TpiResults {
   return {};
@@ -81,6 +81,27 @@ export function tpiProgress(results: TpiResults): { done: number; total: number 
 
 export function recordedCount(results: TpiResults): number {
   return TPI_TESTS.filter((test) => results[test.key]?.videoUri).length;
+}
+
+export function physicalGradeLabel(grade: TpiGrade): string {
+  if (grade === 'skipped') return 'Skipped';
+  if (grade === 'full') return 'Pass';
+  if (grade === 'limited') return 'Limited';
+  return 'Restricted';
+}
+
+export function screenReport(results: TpiResults) {
+  return TPI_TESTS.map((test) => {
+    const result = results[test.key];
+    return {
+      test,
+      grade: result?.grade ?? ('skipped' as TpiGrade),
+      rationale: result?.rationale ?? '',
+      videoUri: result?.videoUri ?? null,
+      leftGrade: result?.leftGrade,
+      rightGrade: result?.rightGrade,
+    };
+  });
 }
 
 export function defaultResult(key: TpiTestKey): TpiResult {

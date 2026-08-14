@@ -41,7 +41,7 @@ Apply `supabase/migrations/001_clarity_schema.sql` (and `002_units_and_tpi.sql` 
 | Table | Purpose |
 | --- | --- |
 | `profiles` | Biometrics, units, injuries, XP, flow streak |
-| `mobility_screens` | TPI results plus aggregated capability grades |
+| `mobility_screens` | Physical screen results plus aggregated capability grades |
 | `swing_sessions` / `swing_clips` | Dual baseline (air vs real) |
 | `diagnoses` | One drill + one setup check |
 | `habit_logs` | Daily 2-minute motion habit |
@@ -57,8 +57,8 @@ The app remains usable before the SQL is applied: everything is saved on-device 
 
 | Flow | Routes |
 | --- | --- |
-| Onboarding | `/welcome` → units, account, biometrics, injuries, eye dominance, TPI screen |
-| TPI / correctives | `/tpi` · `/correctives` |
+| Onboarding | `/welcome` → units, account, biometrics, injuries, eye dominance, physical screen |
+| Physical screen / correctives | `/physical-screen` · `/correctives` |
 | Swing analysis | `/analyze` · `/session/capture` · `/session/diagnose` · `/session/drill` |
 | Practice habits | `/practice` · `/range-plan` · `/journal` |
 | Scorecard | `/card` · `/card-review` |
@@ -67,7 +67,7 @@ The app remains usable before the SQL is applied: everything is saved on-device 
 ## Coaching rules encoded in software
 
 1. **Location units** — with consent, country sets Metric or Imperial (always overridable).
-2. **TPI physical screen** — 16 tests with instructions and a recording of each; limited tests get stretches and exercises.
+2. **Physical screen** — 16 movements with an illustrated rundown, a 3-2-1 capture, and AI grading (pass / limited / restricted). Limited tests get stretches and exercises.
 3. **Capability lock** — restricted mobility is stored on `mobility_screens` and never scored as a swing fault.
 4. **Evaluate in order** — Setup/Grip → Tempo → Axis Center → Swing Path.
 5. **Single-focus** — exactly one primary motion drill and one setup check per upload.

@@ -4,42 +4,57 @@ import { StyleSheet, View } from 'react-native';
 import { Body, Button, Card, Kicker, Screen, Title } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
 import { mobilityLabel } from '../src/data/instruction';
-import { correctivesFor } from '../src/services/tpi';
+import { correctivesFor, physicalGradeLabel, screenReport } from '../src/services/tpi';
 
 export default function CorrectivesScreen() {
   const router = useRouter();
   const { mobility, draft } = useApp();
   const results = mobility?.tpi ?? draft.tpi;
+  const report = screenReport(results);
   const plans = correctivesFor(results);
 
   return (
     <Screen>
-      <Kicker>Restore available motion</Kicker>
-      <Title>Stretches & exercises</Title>
+      <Kicker>Physical Screen</Kicker>
+      <Title>Your results</Title>
       <Body muted>
-        These belong to the TPI screens that were limited or restricted. They are not swing positions. Do them away from
-        the ball so the clubhead can later move inside a more comfortable envelope.
+        Clarity read each clip for available motion. Pass, limited, and restricted describe range — never a swing
+        fault. Stretches and exercises sit under anything limited or restricted.
       </Body>
+      {report.map((row) => (
+        <Card key={row.test.key}>
+          <Kicker>
+            {row.test.number}. {row.test.title} · {physicalGradeLabel(row.grade)}
+          </Kicker>
+          {row.leftGrade && row.rightGrade ? (
+            <Body muted>
+              Left {physicalGradeLabel(row.leftGrade)} · Right {physicalGradeLabel(row.rightGrade)}
+            </Body>
+          ) : null}
+          {row.rationale ? <Body>{row.rationale}</Body> : null}
+          {row.videoUri ? (
+            <Video
+              source={{ uri: row.videoUri }}
+              style={styles.clip}
+              resizeMode={ResizeMode.COVER}
+              useNativeControls
+              isMuted
+            />
+          ) : null}
+        </Card>
+      ))}
+      <Title>Exercises to restore range</Title>
       {!plans.length ? (
         <Card>
-          <Body>No limitations on file. Re-run the TPI screen if something feels tighter than last time.</Body>
+          <Body>No limitations on file. Re-run the physical screen if something feels tighter than last time.</Body>
         </Card>
       ) : (
         plans.map((plan) => (
-          <Card key={plan.test.key}>
+          <Card key={`ex-${plan.test.key}`}>
             <Kicker>
               {plan.test.title} · {mobilityLabel(plan.grade)}
             </Kicker>
             <Body muted>{plan.test.capabilityNote}</Body>
-            {plan.videoUri ? (
-              <Video
-                source={{ uri: plan.videoUri }}
-                style={styles.clip}
-                resizeMode={ResizeMode.COVER}
-                useNativeControls
-                isMuted
-              />
-            ) : null}
             {plan.items.map((item) => (
               <View key={item.name} style={{ gap: 4, marginTop: 8 }}>
                 <Kicker>
@@ -57,7 +72,7 @@ export default function CorrectivesScreen() {
           </Card>
         ))
       )}
-      <Button label="Re-run TPI screen" variant="secondary" onPress={() => router.push('/tpi' as Href)} />
+      <Button label="Re-run physical screen" variant="secondary" onPress={() => router.push('/physical-screen' as Href)} />
       <Button label="Back home" variant="ghost" onPress={() => router.replace('/')} />
     </Screen>
   );

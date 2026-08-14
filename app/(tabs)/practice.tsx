@@ -33,7 +33,7 @@ export default function PracticeScreen() {
         <Body>{plan.pile3Focus}</Body>
         <Button label="Open full plan" variant="secondary" onPress={() => router.push('/range-plan')} />
       </Card>
-      <Button label="TPI correctives" variant="ghost" onPress={() => router.push('/correctives' as Href)} />
+      <Button label="Physical screen results" variant="ghost" onPress={() => router.push('/correctives' as Href)} />
       <Button label="Practice journal" variant="ghost" onPress={() => router.push('/journal')} />
     </Screen>
   );

@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { TpiWalkthrough } from '../../src/components/TpiWalkthrough';
+import { PhysicalScreenWalkthrough } from '../../src/components/PhysicalScreenWalkthrough';
 import { ProgressDots, Screen } from '../../src/components/ui';
 import { useApp } from '../../src/context/AppContext';
 
@@ -9,7 +9,7 @@ export default function MobilityScreen() {
   return (
     <Screen>
       <ProgressDots step={5} total={7} />
-      <TpiWalkthrough
+      <PhysicalScreenWalkthrough
         results={draft.tpi}
         onChange={(tpi) => setDraft({ tpi })}
         onFinished={() => router.push('/complete')}

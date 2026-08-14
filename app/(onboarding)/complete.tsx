@@ -32,10 +32,10 @@ export default function CompleteScreen() {
   return (
     <Screen>
       <ProgressDots step={6} total={7} />
-      <Kicker>Stored in mobility_screens</Kicker>
+      <Kicker>Physical Screen</Kicker>
       <Title>Your envelope</Title>
       <Body muted>
-        {recorded} of {TPI_TESTS.length} tests recorded. Restricted does not mean “wrong.” It means the swing will be
+        {recorded} of {TPI_TESTS.length} screens recorded. Restricted does not mean “wrong.” It means the swing will be
         fitted, and stretches will be offered — never a penalty.
       </Body>
       {MOBILITY_STEPS.map((step) => (

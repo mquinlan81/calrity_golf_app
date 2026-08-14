@@ -9,7 +9,7 @@ import {
   parsePuttInput,
   systemFromCountry,
 } from './units';
-import { correctivesFor, mapTpiToMobility, resultGrade, worstGrade } from './tpi';
+import { correctivesFor, mapTpiToMobility, physicalGradeLabel, resultGrade, screenReport, worstGrade } from './tpi';
 import type { TpiResults } from '../types';
 
 describe('measurement system from location', () => {
@@ -44,7 +44,7 @@ describe('putt distance display', () => {
   });
 });
 
-describe('TPI mapping', () => {
+describe('physical screen mapping', () => {
   it('never treats skipped tests as faults and takes the worst scored grade', () => {
     const results: TpiResults = {
       pelvic_tilt: {
@@ -83,5 +83,23 @@ describe('TPI mapping', () => {
   it('ranks restricted above limited above full', () => {
     assert.equal(worstGrade(['full', 'limited']), 'limited');
     assert.equal(worstGrade(['limited', 'restricted']), 'restricted');
+  });
+
+  it('lists every screen in the results report, including skips', () => {
+    const report = screenReport({
+      pelvic_tilt: {
+        key: 'pelvic_tilt',
+        grade: 'full',
+        videoUri: 'file://a.mp4',
+        remoteUrl: null,
+        notes: '',
+        rationale: 'Smooth tilt both ways with the chest quiet and knees still.',
+        assessedBy: 'ai',
+      },
+    });
+    assert.equal(report.length, 16);
+    assert.equal(physicalGradeLabel(report[0].grade), 'Pass');
+    assert.equal(report[1].grade, 'skipped');
+    assert.equal(physicalGradeLabel(report[1].grade), 'Skipped');
   });
 });

@@ -59,12 +59,12 @@ export default function HomeScreen() {
         </Card>
       )}
       <Card>
-        <Kicker>TPI screen</Kicker>
+        <Kicker>Physical Screen</Kicker>
         <Body>
           Limitations from the physical screen have stretches and exercises waiting. The swing is still fitted to the
           body you have today.
         </Body>
-        <Button label="Open correctives" variant="secondary" onPress={() => router.push('/correctives' as Href)} />
+        <Button label="Open results" variant="secondary" onPress={() => router.push('/correctives' as Href)} />
       </Card>
       <Body muted>{philosophy.tagline}</Body>
       <Button label="Coach lesson lab" variant="ghost" onPress={() => router.push('/admin/lessons')} />

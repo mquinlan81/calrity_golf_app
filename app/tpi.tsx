@@ -1,20 +1,5 @@
-import { type Href, useRouter } from 'expo-router';
-import { TpiWalkthrough } from '../src/components/TpiWalkthrough';
-import { Screen } from '../src/components/ui';
-import { useApp } from '../src/context/AppContext';
+import { Redirect } from 'expo-router';
 
-export default function RetakeTpiScreen() {
-  const router = useRouter();
-  const { draft, setDraft, saveTpiScreen } = useApp();
-  return (
-    <Screen>
-      <TpiWalkthrough
-        results={draft.tpi}
-        onChange={(tpi) => setDraft({ tpi })}
-        onFinished={(tpi) => {
-          void saveTpiScreen(tpi).then(() => router.replace('/correctives' as Href));
-        }}
-      />
-    </Screen>
-  );
+export default function LegacyPhysicalScreenRedirect() {
+  return <Redirect href="/physical-screen" />;
 }

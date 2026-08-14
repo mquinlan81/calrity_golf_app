@@ -16,8 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "golf.clarity.app",
       "infoPlist": {
-        "NSCameraUsageDescription": "Clarity records TPI physical screens, air swings, real swings, and paper scorecards.",
-        "NSMicrophoneUsageDescription": "Clarity records audio with TPI screens, swing videos, and coach lessons.",
+        "NSCameraUsageDescription": "Clarity records physical screens, air swings, real swings, and paper scorecards.",
+        "NSMicrophoneUsageDescription": "Clarity records audio with physical screens, swing videos, and coach lessons.",
         "NSPhotoLibraryUsageDescription": "Clarity lets you choose swing videos, scorecard photos, and coach lesson files.",
         "NSLocationWhenInUseUsageDescription": "Clarity uses your location once to set Metric or Imperial units (height and putting distance). We do not track you on the course."
       }
@@ -54,14 +54,14 @@
       [
         "expo-av",
         {
-          "microphonePermission": "Clarity records audio with TPI screens, swing videos, and coach lessons."
+          "microphonePermission": "Clarity records audio with physical screens, swing videos, and coach lessons."
         }
       ],
       [
         "expo-camera",
         {
-          "cameraPermission": "Clarity records each TPI physical screen and your golf swing.",
-          "microphonePermission": "Clarity records audio with TPI screens and swing videos.",
+          "cameraPermission": "Clarity records each physical screen and your golf swing.",
+          "microphonePermission": "Clarity records audio with physical screens and swing videos.",
           "recordAudioAndroid": true
         }
       ],

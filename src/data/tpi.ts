@@ -642,6 +642,6 @@ export const TPI_TESTS: TpiTest[] = [
 
 export function tpiTestByKey(key: TpiTestKey): TpiTest {
   const test = TPI_TESTS.find((item) => item.key === key);
-  if (!test) throw new Error(`Unknown TPI test: ${key}`);
+  if (!test) throw new Error(`Unknown physical screen: ${key}`);
   return test;
 }
