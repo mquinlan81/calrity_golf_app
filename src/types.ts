@@ -42,6 +42,15 @@ export interface TpiResult {
   typicalRangeText?: string;
   observedRangeText?: string;
   observedDegrees?: number;
+  poseTrace?: PoseTrace;
+}
+
+export interface PoseTrace {
+  aspect: number;
+  durationMs: number;
+  timesMs: number[];
+  packed: number[];
+  tracking: 'joints' | 'outline';
 }
 
 export type TpiResults = Partial<Record<TpiTestKey, TpiResult>>;

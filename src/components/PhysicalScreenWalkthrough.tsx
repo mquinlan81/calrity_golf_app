@@ -1,6 +1,6 @@
-import { Video, ResizeMode } from 'expo-av';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
+import { useApp } from '../context/AppContext';
 import { TPI_TESTS } from '../data/tpi';
 import { screenMeta } from '../data/physicalScreenMeta';
 import { assessPhysicalClip, skippedResult } from '../services/physicalAssess';
@@ -9,6 +9,7 @@ import { colors } from '../theme';
 import type { TpiResult, TpiResults } from '../types';
 import { GuidedRecorder } from './GuidedRecorder';
 import { PhysicalScreenFigure } from './PhysicalScreenFigure';
+import { PoseReview } from './PoseReview';
 import { Body, Button, Card, Kicker, Title } from './ui';
 
 type Phase = 'intro' | 'brief' | 'record' | 'assess' | 'result';
@@ -22,6 +23,9 @@ export function PhysicalScreenWalkthrough({
   onChange: (next: TpiResults) => void;
   onFinished: (next: TpiResults) => void;
 }) {
+  const { draft, profile } = useApp();
+  const heightCm = profile?.height_cm ?? (Number(draft.heightCm) || null);
+  const system = profile?.measurement_system ?? draft.measurementSystem;
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>('intro');
   const [busy, setBusy] = useState(false);
@@ -83,9 +87,10 @@ export function PhysicalScreenWalkthrough({
         <Kicker>Physical Screen</Kicker>
         <Title>16 movements. Your range, not a pose.</Title>
         <Body>
-          Use the front camera so you can see the countdown and yourself. Recording waits until hips and shoulders are
-          in the box, then 3-2-1. After each motion you get typical range vs yours. If Clarity cannot see you, it will
-          say so and show a tutorial — a short real motion is still scored, not treated as the wrong exercise.
+          Use the front camera so you can see the countdown and yourself. After each clip you get a split view: your
+          video with joint dots, a skeleton of how those joints moved, and numbers for pelvis sway, chest side bend,
+          spine angle, and lift — like a 2D version of a 3D swing studio. Restricted and free motion should show
+          different ranges.
         </Body>
         <Card>
           <Body muted>
@@ -105,7 +110,7 @@ export function PhysicalScreenWalkthrough({
           Screen {test.number} / {TPI_TESTS.length}
         </Kicker>
         <Title>Reading your video</Title>
-        <Body muted>Checking that we can see you, then measuring how far the motion traveled.</Body>
+        <Body muted>Mapping joints, then measuring sway, side bend, and spine angle through the clip.</Body>
         <ActivityIndicator color={colors.gold} />
       </View>
     );
@@ -131,7 +136,13 @@ export function PhysicalScreenWalkthrough({
             ))}
           </Card>
           {current.videoUri ? (
-            <Video source={{ uri: current.videoUri }} style={styles.clip} resizeMode={ResizeMode.COVER} useNativeControls isMuted />
+            <PoseReview
+              videoUri={current.videoUri}
+              trace={current.poseTrace}
+              testKey={test.key}
+              heightCm={heightCm}
+              system={system}
+            />
           ) : null}
           <Button label="Try again" onPress={retry} />
           <Button variant="ghost" label="Skip this screen" onPress={skip} />
@@ -145,6 +156,15 @@ export function PhysicalScreenWalkthrough({
           Screen {test.number} / {TPI_TESTS.length} · {physicalGradeLabel(current.grade)}
         </Kicker>
         <Title>{test.title}</Title>
+        {current.videoUri ? (
+          <PoseReview
+            videoUri={current.videoUri}
+            trace={current.poseTrace}
+            testKey={test.key}
+            heightCm={heightCm}
+            system={system}
+          />
+        ) : null}
         <Card>
           <Kicker>Typical range of motion</Kicker>
           <Body>{typicalRangeCopy(test, current)}</Body>
@@ -174,9 +194,6 @@ export function PhysicalScreenWalkthrough({
               </View>
             ))}
           </Card>
-        ) : null}
-        {current.videoUri ? (
-          <Video source={{ uri: current.videoUri }} style={styles.clip} resizeMode={ResizeMode.COVER} useNativeControls isMuted />
         ) : null}
         <Button
           label={nextTest ? `Next · ${nextTest.title}` : 'See full rundown'}
@@ -258,7 +275,3 @@ export function PhysicalScreenWalkthrough({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  clip: { width: '100%', height: 180, borderRadius: 12 },
-});

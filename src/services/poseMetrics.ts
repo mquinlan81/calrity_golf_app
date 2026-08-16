@@ -196,7 +196,7 @@ export function scorePoseScreen(
   };
 }
 
-export function poseResult(test: TpiTest, videoUri: string, score: PoseScreenScore): TpiResult {
+export function poseResult(test: TpiTest, videoUri: string, score: PoseScreenScore, poseTrace?: TpiResult['poseTrace']): TpiResult {
   return {
     key: test.key,
     videoUri,
@@ -211,6 +211,7 @@ export function poseResult(test: TpiTest, videoUri: string, score: PoseScreenSco
     typicalRangeText: score.typicalRangeText,
     observedRangeText: score.observedRangeText,
     observedDegrees: score.observedValue,
+    poseTrace,
   };
 }
 

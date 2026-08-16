@@ -1,16 +1,18 @@
-import { Video, ResizeMode } from 'expo-av';
 import { type Href, useRouter } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Body, Button, Card, Kicker, Screen, Title } from '../src/components/ui';
+import { PoseReview } from '../src/components/PoseReview';
 import { useApp } from '../src/context/AppContext';
 import { correctivesFor, physicalGradeLabel, screenReport } from '../src/services/tpi';
 
 export default function CorrectivesScreen() {
   const router = useRouter();
-  const { mobility, draft } = useApp();
+  const { mobility, draft, profile } = useApp();
   const results = mobility?.tpi ?? draft.tpi;
   const report = screenReport(results);
   const plans = correctivesFor(results);
+  const heightCm = profile?.height_cm ?? (Number(draft.heightCm) || null);
+  const system = profile?.measurement_system ?? draft.measurementSystem;
 
   return (
     <Screen>
@@ -33,12 +35,13 @@ export default function CorrectivesScreen() {
             </Body>
           ) : null}
           {row.videoUri ? (
-            <Video
-              source={{ uri: row.videoUri }}
-              style={styles.clip}
-              resizeMode={ResizeMode.COVER}
-              useNativeControls
-              isMuted
+            <PoseReview
+              videoUri={row.videoUri}
+              trace={row.poseTrace}
+              testKey={row.test.key}
+              heightCm={heightCm}
+              system={system}
+              autoPlay={false}
             />
           ) : null}
         </Card>
@@ -78,7 +81,3 @@ export default function CorrectivesScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  clip: { width: '100%', height: 180, borderRadius: 12, marginTop: 8 },
-});

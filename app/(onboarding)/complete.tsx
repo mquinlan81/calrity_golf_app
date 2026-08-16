@@ -2,6 +2,7 @@ import { type Href, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 import { Body, Button, Card, Kicker, ProgressDots, Screen, Title } from '../../src/components/ui';
+import { PoseReview } from '../../src/components/PoseReview';
 import { useApp } from '../../src/context/AppContext';
 import { TPI_TESTS } from '../../src/data/tpi';
 import { mobilityLabel } from '../../src/data/instruction';
@@ -13,6 +14,8 @@ export default function CompleteScreen() {
   const { peekDraft, completeOnboarding } = useApp();
   const [busy, setBusy] = useState(false);
   const snapshot = peekDraft();
+  const heightCm = Number(snapshot.heightCm) || null;
+  const system = snapshot.measurementSystem;
   const mobility = mapTpiToMobility(snapshot.tpi);
   const plans = correctivesFor(snapshot.tpi);
   const recorded = TPI_TESTS.filter((test) => snapshot.tpi[test.key]?.videoUri).length;
@@ -47,6 +50,16 @@ export default function CompleteScreen() {
             </Kicker>
             <Body muted>Typical range of motion should be: {typicalRangeCopy(test, result)}</Body>
             <Body>Your range of motion was: {observedRangeCopy(test, result)}</Body>
+            {result?.videoUri ? (
+              <PoseReview
+                videoUri={result.videoUri}
+                trace={result.poseTrace}
+                testKey={test.key}
+                heightCm={heightCm}
+                system={system}
+                autoPlay={false}
+              />
+            ) : null}
           </Card>
         );
       })}

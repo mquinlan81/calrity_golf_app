@@ -120,6 +120,7 @@ export function screenReport(results: TpiResults) {
       recognized: result?.recognized,
       typicalRange: typicalRangeCopy(test, result),
       observedRange: observedRangeCopy(test, result),
+      poseTrace: result?.poseTrace,
     };
   });
 }
