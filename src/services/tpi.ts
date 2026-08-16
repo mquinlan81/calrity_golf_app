@@ -12,7 +12,7 @@ export function worstGrade(grades: MobilityGrade[]): MobilityGrade {
 }
 
 export function resultGrade(result: TpiResult | undefined): MobilityGrade | null {
-  if (!result || result.grade === 'skipped') return null;
+  if (!result || result.grade === 'skipped' || result.recognized === false) return null;
   const sides: MobilityGrade[] = [];
   if (result.grade === 'full' || result.grade === 'limited' || result.grade === 'restricted') {
     sides.push(result.grade);
@@ -90,16 +90,35 @@ export function physicalGradeLabel(grade: TpiGrade): string {
   return 'Restricted';
 }
 
+export function typicalRangeCopy(test: TpiTest): string {
+  return test.passLooksLike;
+}
+
+export function observedRangeCopy(test: TpiTest, result: TpiResult | undefined): string {
+  if (!result || result.grade === 'skipped') {
+    return 'This screen was skipped — not treated as a limitation.';
+  }
+  if (result.recognized === false) {
+    return 'Clarity did not see this motion clearly enough to score range.';
+  }
+  if (result.grade === 'full') return 'Your travel matched typical range.';
+  if (result.grade === 'limited') return test.limitedLooksLike;
+  return test.restrictedLooksLike;
+}
+
 export function screenReport(results: TpiResults) {
   return TPI_TESTS.map((test) => {
     const result = results[test.key];
     return {
       test,
-      grade: result?.grade ?? ('skipped' as TpiGrade),
+      grade: result?.recognized === false ? ('skipped' as TpiGrade) : result?.grade ?? ('skipped' as TpiGrade),
       rationale: result?.rationale ?? '',
       videoUri: result?.videoUri ?? null,
       leftGrade: result?.leftGrade,
       rightGrade: result?.rightGrade,
+      recognized: result?.recognized,
+      typicalRange: typicalRangeCopy(test),
+      observedRange: observedRangeCopy(test, result),
     };
   });
 }

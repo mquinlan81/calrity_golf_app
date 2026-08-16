@@ -5,19 +5,27 @@ import { screenMeta, type ScreenPose } from '../data/physicalScreenMeta';
 import type { TpiTestKey } from '../types';
 import { colors, fonts } from '../theme';
 
-export function PhysicalScreenFigure({ testKey }: { testKey: TpiTestKey }) {
+export function PhysicalScreenFigure({
+  testKey,
+  title = 'Proper motion — looping',
+  intervalMs = 750,
+}: {
+  testKey: TpiTestKey;
+  title?: string;
+  intervalMs?: number;
+}) {
   const meta = screenMeta(testKey);
   const [action, setAction] = useState(false);
 
   useEffect(() => {
     setAction(false);
-    const id = setInterval(() => setAction((value) => !value), 750);
+    const id = setInterval(() => setAction((value) => !value), intervalMs);
     return () => clearInterval(id);
-  }, [testKey]);
+  }, [testKey, intervalMs]);
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.kicker}>Proper motion — looping</Text>
+      <Text style={styles.kicker}>{title}</Text>
       <PoseSvg pose={action ? meta.actionPose : meta.startPose} />
       <Text style={styles.caption}>{action ? meta.actionCaption : meta.startCaption}</Text>
     </View>

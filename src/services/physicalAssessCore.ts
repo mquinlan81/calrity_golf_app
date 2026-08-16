@@ -17,6 +17,7 @@ export interface MotionMatch {
   amplitude: number;
   shape: number;
   isolation: number;
+  recognized: boolean;
   leftScore?: number;
   rightScore?: number;
   grade: MobilityGrade;
@@ -164,6 +165,10 @@ export function combineBands(clip: MotionClip, bands: MotionBand[]): number[] {
   return out;
 }
 
+export function isRecognizedMotion(match: Pick<MotionMatch, 'amplitude' | 'shape'>): boolean {
+  return match.amplitude >= 0.045 && match.shape >= 0.3;
+}
+
 export function gradeFromScore(score: number): MobilityGrade {
   if (score >= 0.62) return 'full';
   if (score >= 0.38) return 'limited';
@@ -185,6 +190,7 @@ export function compareToReference(clip: MotionClip, reference: ReferenceMotion)
   let grade = gradeFromScore(score);
   if (amplitude < 0.055) grade = 'restricted';
   else if (amplitude < 0.12 && grade === 'full') grade = 'limited';
+  const recognized = isRecognizedMotion({ amplitude, shape });
 
   const leftScore = reference.primary.includes('left') || reference.primary.includes('right')
     ? bandScore(clip.left, reference.series.left)
@@ -194,7 +200,7 @@ export function compareToReference(clip: MotionClip, reference: ReferenceMotion)
     : undefined;
 
   if (leftScore == null || rightScore == null) {
-    return { score, amplitude, shape, isolation, grade };
+    return { score, amplitude, shape, isolation, recognized, grade };
   }
   const leftGrade = gradeFromScore(leftScore);
   const rightGrade = gradeFromScore(rightScore);
@@ -203,6 +209,7 @@ export function compareToReference(clip: MotionClip, reference: ReferenceMotion)
     amplitude,
     shape,
     isolation,
+    recognized,
     leftScore,
     rightScore,
     leftGrade,
@@ -223,6 +230,9 @@ export function rationaleFor(test: TpiTest, match: MotionMatch): string {
     match.leftGrade && match.rightGrade && match.leftGrade !== match.rightGrade
       ? ` Left ${label(match.leftGrade)}, right ${label(match.rightGrade)}.`
       : '';
+  if (!match.recognized) {
+    return `That did not appear to be the ${reference.title} motion. Watch the tutorial and try again — this is not a range score yet.`;
+  }
   if (match.grade === 'full') {
     return `Compared to the proper ${reference.title} motion, your clip matched the timing and the moving parts.${sides} ${seen}`;
   }
@@ -250,13 +260,13 @@ export function skippedResult(test: TpiTest): TpiResult {
 export function unclearResult(test: TpiTest, videoUri: string): TpiResult {
   return {
     key: test.key,
-    grade: 'limited',
+    grade: 'skipped',
     videoUri,
     remoteUrl: null,
     notes: '',
     assessedBy: 'ai',
-    rationale:
-      'The video was hard to read, so this is marked limited until you re-record in clearer light. It is still not a swing fault.',
+    recognized: false,
+    rationale: `That did not appear to be the ${test.title.toLowerCase()} motion. Watch the tutorial and try again — this is not a range score yet.`,
   };
 }
 

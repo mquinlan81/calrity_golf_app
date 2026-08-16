@@ -67,7 +67,7 @@ The app remains usable before the SQL is applied: everything is saved on-device 
 ## Coaching rules encoded in software
 
 1. **Location units** — with consent, country sets Metric or Imperial (always overridable).
-2. **Physical screen** — 16 movements with a looping motion demo, a short video (not a still), and AI grading against a proper-motion reference (pass / limited / restricted). Limited tests get stretches and exercises.
+2. **Physical screen** — front camera, a result after each motion, a tutorial retry if the clip is not the expected exercise, then typical range vs your range with matching stretches.
 3. **Capability lock** — restricted mobility is stored on `mobility_screens` and never scored as a swing fault.
 4. **Evaluate in order** — Setup/Grip → Tempo → Axis Center → Swing Path.
 5. **Single-focus** — exactly one primary motion drill and one setup check per upload.

@@ -31,7 +31,7 @@ export function GuidedRecorder({
   const [recording, setRecording] = useState(false);
   const [remaining, setRemaining] = useState(recordSeconds);
   const [uri, setUri] = useState<string | null>(null);
-  const [facing, setFacing] = useState<'back' | 'front'>('back');
+  const [facing, setFacing] = useState<'back' | 'front'>('front');
   const [count, setCount] = useState<number | null>(null);
   const [status, setStatus] = useState<CaptureStatus>('idle');
   const live = Platform.OS !== 'web' && Boolean(camPerm?.granted && micPerm?.granted);
@@ -167,6 +167,7 @@ export function GuidedRecorder({
             facing={facing}
             mode="video"
             mute={false}
+            mirror={facing === 'front'}
             videoQuality="720p"
             onCameraReady={() => setReady(true)}
           />
@@ -181,17 +182,17 @@ export function GuidedRecorder({
         <View style={styles.caption}>
           <Text style={styles.captionText}>
             {facingHint === 'side'
-              ? 'Side-on video. Whole body in the box.'
+              ? 'Front camera. Turn side-on so you can still see the countdown.'
               : facingHint === 'behind'
-                ? 'Behind the player, or side-on if you are alone.'
-                : 'Facing the phone. Belt and shoulders in frame.'}{' '}
-            {hint} This is a short video of the motion, not a still photo.
+                ? 'Front camera. Set the phone where you can see yourself — behind or side-on is fine.'
+                : 'Front camera. You should see yourself and the countdown.'}{' '}
+            {hint} Whole body in the box. This is a short video of the motion.
           </Text>
         </View>
       </View>
       <View style={styles.row}>
         <Pressable onPress={() => setFacing((value) => (value === 'back' ? 'front' : 'back'))} style={styles.flip}>
-          <Text style={styles.flipText}>{facing === 'back' ? 'Rear camera' : 'Front camera'}</Text>
+          <Text style={styles.flipText}>{facing === 'front' ? 'Front camera' : 'Rear camera'}</Text>
         </Pressable>
       </View>
       {uri ? (

@@ -36,6 +36,7 @@ export interface TpiResult {
   rightGrade?: MobilityGrade;
   rationale?: string;
   assessedBy?: 'ai' | 'skipped';
+  recognized?: boolean;
 }
 
 export type TpiResults = Partial<Record<TpiTestKey, TpiResult>>;

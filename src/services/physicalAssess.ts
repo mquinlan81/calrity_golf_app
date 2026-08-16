@@ -40,9 +40,10 @@ export async function assessPhysicalClip(test: TpiTest, videoUri: string): Promi
       remoteUrl: null,
       notes: '',
       assessedBy: 'ai',
-      grade: match.grade,
-      leftGrade: match.leftGrade,
-      rightGrade: match.rightGrade,
+      recognized: match.recognized,
+      grade: match.recognized ? match.grade : 'skipped',
+      leftGrade: match.recognized ? match.leftGrade : undefined,
+      rightGrade: match.recognized ? match.rightGrade : undefined,
       rationale: rationaleFor(test, match),
     };
   } catch {

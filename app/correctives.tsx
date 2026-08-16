@@ -3,7 +3,6 @@ import { type Href, useRouter } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 import { Body, Button, Card, Kicker, Screen, Title } from '../src/components/ui';
 import { useApp } from '../src/context/AppContext';
-import { mobilityLabel } from '../src/data/instruction';
 import { correctivesFor, physicalGradeLabel, screenReport } from '../src/services/tpi';
 
 export default function CorrectivesScreen() {
@@ -16,22 +15,23 @@ export default function CorrectivesScreen() {
   return (
     <Screen>
       <Kicker>Physical Screen</Kicker>
-      <Title>Your results</Title>
+      <Title>Typical range vs yours</Title>
       <Body muted>
-        Clarity read each clip for available motion. Pass, limited, and restricted describe range — never a swing
-        fault. Stretches and exercises sit under anything limited or restricted.
+        Typical range is what a free version of each motion looks like. Your range is what Clarity saw. Restricted does
+        not mean a swing fault. Exercises below are only for the screens that were limited or restricted.
       </Body>
       {report.map((row) => (
         <Card key={row.test.key}>
           <Kicker>
             {row.test.number}. {row.test.title} · {physicalGradeLabel(row.grade)}
           </Kicker>
+          <Body muted>Typical range of motion should be: {row.typicalRange}</Body>
+          <Body>Your range of motion was: {row.observedRange}</Body>
           {row.leftGrade && row.rightGrade ? (
             <Body muted>
               Left {physicalGradeLabel(row.leftGrade)} · Right {physicalGradeLabel(row.rightGrade)}
             </Body>
           ) : null}
-          {row.rationale ? <Body>{row.rationale}</Body> : null}
           {row.videoUri ? (
             <Video
               source={{ uri: row.videoUri }}
@@ -43,18 +43,19 @@ export default function CorrectivesScreen() {
           ) : null}
         </Card>
       ))}
-      <Title>Exercises to restore range</Title>
+      <Title>Exercises to help you reach typical range</Title>
       {!plans.length ? (
         <Card>
-          <Body>No limitations on file. Re-run the physical screen if something feels tighter than last time.</Body>
+          <Body>Nothing limited on file. Re-run the physical screen if something feels tighter than last time.</Body>
         </Card>
       ) : (
         plans.map((plan) => (
           <Card key={`ex-${plan.test.key}`}>
             <Kicker>
-              {plan.test.title} · {mobilityLabel(plan.grade)}
+              {plan.test.title} · {physicalGradeLabel(plan.grade)}
             </Kicker>
-            <Body muted>{plan.test.capabilityNote}</Body>
+            <Body muted>Typical range: {plan.test.passLooksLike}</Body>
+            <Body muted>Your range: {plan.test.limitedLooksLike || plan.test.restrictedLooksLike}</Body>
             {plan.items.map((item) => (
               <View key={item.name} style={{ gap: 4, marginTop: 8 }}>
                 <Kicker>

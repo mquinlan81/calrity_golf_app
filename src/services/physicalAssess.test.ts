@@ -45,6 +45,7 @@ describe('physical screen motion matching', () => {
   it('gives a near-perfect score when the user clip matches the proper-motion reference', () => {
     const match = compareToReference(clipFromReference('pelvic_tilt'), REFERENCE_MOTIONS.pelvic_tilt);
     assert.equal(match.grade, 'full');
+    assert.ok(match.recognized);
     assert.ok(match.score >= 0.62);
   });
 
@@ -60,11 +61,20 @@ describe('physical screen motion matching', () => {
     };
     const match = compareToReference(still, REFERENCE_MOTIONS.pelvic_tilt);
     assert.equal(match.grade, 'restricted');
+    assert.equal(match.recognized, false);
+  });
+
+  it('treats a still or unrelated clip as not the expected exercise', () => {
+    const clip = clipFromReference('pelvic_tilt', 0);
+    clip.chest = REFERENCE_MOTIONS.torso_rotation.series.chest;
+    const match = compareToReference(clip, REFERENCE_MOTIONS.pelvic_tilt);
+    assert.equal(match.recognized, false);
   });
 
   it('scores a shorter version of the same motion as limited, not a fail-to-pose', () => {
     const match = compareToReference(clipFromReference('pelvic_tilt', 0.18), REFERENCE_MOTIONS.pelvic_tilt);
     assert.equal(match.grade, 'limited');
+    assert.equal(match.recognized, true);
     assert.ok(match.amplitude < 0.12);
   });
 
@@ -130,9 +140,23 @@ describe('physical screen motion matching', () => {
       amplitude: 0.5,
       shape: 0.8,
       isolation: 0.8,
+      recognized: true,
       grade: 'full',
     });
     assert.match(text, /Compared to the proper pelvic tilt motion/);
+  });
+
+  it('asks for a retry when the expected motion is not seen', () => {
+    const test = TPI_TESTS[0];
+    const text = rationaleFor(test, {
+      score: 0.1,
+      amplitude: 0.02,
+      shape: 0.1,
+      isolation: 0.2,
+      recognized: false,
+      grade: 'restricted',
+    });
+    assert.match(text, /did not appear to be the pelvic tilt motion/);
   });
 
   it('maps match scores onto pass, limited, and restricted', () => {

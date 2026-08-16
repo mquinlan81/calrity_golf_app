@@ -5,7 +5,7 @@ import { Body, Button, Card, Kicker, ProgressDots, Screen, Title } from '../../s
 import { useApp } from '../../src/context/AppContext';
 import { TPI_TESTS } from '../../src/data/tpi';
 import { mobilityLabel } from '../../src/data/instruction';
-import { correctivesFor, mapTpiToMobility } from '../../src/services/tpi';
+import { correctivesFor, mapTpiToMobility, observedRangeCopy, physicalGradeLabel, typicalRangeCopy } from '../../src/services/tpi';
 import { MOBILITY_STEPS } from '../../src/types';
 
 export default function CompleteScreen() {
@@ -33,11 +33,23 @@ export default function CompleteScreen() {
     <Screen>
       <ProgressDots step={6} total={7} />
       <Kicker>Physical Screen</Kicker>
-      <Title>Your envelope</Title>
+      <Title>Typical range vs yours</Title>
       <Body muted>
-        {recorded} of {TPI_TESTS.length} screens recorded. Restricted does not mean “wrong.” It means the swing will be
-        fitted, and stretches will be offered — never a penalty.
+        {recorded} of {TPI_TESTS.length} screens recorded. Typical range is the free version of each motion. Your range
+        is what Clarity saw. Restricted is a limit to respect, never a penalty.
       </Body>
+      {TPI_TESTS.map((test) => {
+        const result = snapshot.tpi[test.key];
+        return (
+          <Card key={test.key}>
+            <Kicker>
+              {test.number}. {test.title} · {physicalGradeLabel(result?.recognized === false ? 'skipped' : result?.grade ?? 'skipped')}
+            </Kicker>
+            <Body muted>Typical range of motion should be: {typicalRangeCopy(test)}</Body>
+            <Body>Your range of motion was: {observedRangeCopy(test, result)}</Body>
+          </Card>
+        );
+      })}
       {MOBILITY_STEPS.map((step) => (
         <Card key={step.key}>
           <Kicker>{step.title}</Kicker>

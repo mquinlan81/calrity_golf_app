@@ -80,6 +80,20 @@ describe('physical screen mapping', () => {
     assert.ok(!plans.some((plan) => plan.test.key === 'pelvic_rotation'));
   });
 
+  it('does not treat an unrecognized clip as a mobility limit', () => {
+    assert.equal(
+      resultGrade({
+        key: 'pelvic_tilt',
+        grade: 'restricted',
+        videoUri: 'file://x.mp4',
+        remoteUrl: null,
+        notes: '',
+        recognized: false,
+      }),
+      null,
+    );
+  });
+
   it('ranks restricted above limited above full', () => {
     assert.equal(worstGrade(['full', 'limited']), 'limited');
     assert.equal(worstGrade(['limited', 'restricted']), 'restricted');
