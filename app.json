@@ -1,0 +1,80 @@
+{
+  "expo": {
+    "name": "Clarity",
+    "slug": "clarity-golf",
+    "scheme": "clarity",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1E2A23"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "golf.clarity.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Clarity records physical screens, air swings, real swings, and paper scorecards.",
+        "NSMicrophoneUsageDescription": "Clarity records audio with physical screens, swing videos, and coach lessons.",
+        "NSPhotoLibraryUsageDescription": "Clarity lets you choose swing videos, scorecard photos, and coach lesson files.",
+        "NSLocationWhenInUseUsageDescription": "Clarity uses your location once to set Metric or Imperial units (height and putting distance). We do not track you on the course."
+      }
+    },
+    "android": {
+      "package": "golf.clarity.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1E2A23",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "expo-image-picker",
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Clarity records audio with physical screens, swing videos, and coach lessons."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Clarity records each physical screen and your golf swing.",
+          "microphonePermission": "Clarity records audio with physical screens and swing videos.",
+          "recordAudioAndroid": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Clarity uses your location once to set Metric or Imperial units. We do not track you on the course."
+        }
+      ],
+      "expo-splash-screen"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
