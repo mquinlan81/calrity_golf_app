@@ -1,4 +1,4 @@
-import type { TpiTestKey } from '../types';
+import type { BodyTarget, TpiTestKey } from '../types';
 
 export type ScreenPose =
   | 'sideStand'
@@ -28,6 +28,7 @@ export interface PhysicalScreenMeta {
   actionPose: ScreenPose;
   startCaption: string;
   actionCaption: string;
+  bodyTarget: BodyTarget;
 }
 
 export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
@@ -39,6 +40,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'sideTilt',
     startCaption: 'Golf posture, side-on',
     actionCaption: 'Pelvis nods; chest stays',
+    bodyTarget: 'full',
   },
   pelvic_rotation: {
     briefing:
@@ -48,6 +50,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'frontPelvisTurn',
     startCaption: 'Facing the phone',
     actionCaption: 'Belt buckle turns',
+    bodyTarget: 'torso',
   },
   torso_rotation: {
     briefing:
@@ -57,6 +60,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'frontChestTurn',
     startCaption: 'Belt toward the camera',
     actionCaption: 'Chest turns around it',
+    bodyTarget: 'torso',
   },
   overhead_deep_squat: {
     briefing:
@@ -66,6 +70,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'sideSquat',
     startCaption: 'Arms up, heels down',
     actionCaption: 'Sit, then stand',
+    bodyTarget: 'full',
   },
   toe_touch: {
     briefing:
@@ -75,6 +80,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'sideHinge',
     startCaption: 'Feet together',
     actionCaption: 'Hinge and hang',
+    bodyTarget: 'full',
   },
   ninety_ninety: {
     briefing:
@@ -84,6 +90,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'frontGoalpost',
     startCaption: 'Arms at 90°',
     actionCaption: 'Hands rotate back',
+    bodyTarget: 'torso',
   },
   single_leg_balance: {
     briefing:
@@ -93,6 +100,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'frontSingleLeg',
     startCaption: 'Both feet down',
     actionCaption: 'One foot, then switch',
+    bodyTarget: 'torso',
   },
   lat_length: {
     briefing:
@@ -102,6 +110,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'sideOverhead',
     startCaption: 'Arms hanging',
     actionCaption: 'Reach overhead',
+    bodyTarget: 'full',
   },
   lower_quarter_rotation: {
     briefing:
@@ -111,6 +120,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'frontSeatedTurn',
     startCaption: 'Sit tall',
     actionCaption: 'Foot swings in and out',
+    bodyTarget: 'torso',
   },
   seated_trunk_rotation: {
     briefing:
@@ -120,6 +130,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'frontSeatedTurn',
     startCaption: 'Sit-bones quiet',
     actionCaption: 'Chest turns',
+    bodyTarget: 'torso',
   },
   cervical_rotation: {
     briefing:
@@ -129,6 +140,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'frontNeck',
     startCaption: 'Eyes to the camera',
     actionCaption: 'Look over a shoulder',
+    bodyTarget: 'upper',
   },
   bridge_leg_extension: {
     briefing:
@@ -138,6 +150,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'sideBridge',
     startCaption: 'On your back',
     actionCaption: 'Bridge, then one leg',
+    bodyTarget: 'floor',
   },
   forearm_rotation: {
     briefing:
@@ -147,6 +160,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'frontForearm',
     startCaption: 'Thumbs up',
     actionCaption: 'Palms up, then down',
+    bodyTarget: 'hands',
   },
   wrist_hinge: {
     briefing:
@@ -156,6 +170,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'sideWristExt',
     startCaption: 'Hold as if a club',
     actionCaption: 'Hinge the hands up',
+    bodyTarget: 'hands',
   },
   wrist_flexion: {
     briefing:
@@ -165,6 +180,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'sideWristFlex',
     startCaption: 'Hold as if a club',
     actionCaption: 'Nod the hands forward',
+    bodyTarget: 'hands',
   },
   reach_roll_lift: {
     briefing:
@@ -174,6 +190,7 @@ export const PHYSICAL_SCREEN_META: Record<TpiTestKey, PhysicalScreenMeta> = {
     actionPose: 'proneLift',
     startCaption: 'Arms reaching',
     actionCaption: 'Thumb up, tiny lift',
+    bodyTarget: 'floor',
   },
 };
 

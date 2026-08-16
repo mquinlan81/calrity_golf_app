@@ -90,11 +90,12 @@ export function physicalGradeLabel(grade: TpiGrade): string {
   return 'Restricted';
 }
 
-export function typicalRangeCopy(test: TpiTest): string {
-  return test.passLooksLike;
+export function typicalRangeCopy(test: TpiTest, result?: TpiResult): string {
+  return result?.typicalRangeText || test.passLooksLike;
 }
 
 export function observedRangeCopy(test: TpiTest, result: TpiResult | undefined): string {
+  if (result?.observedRangeText) return result.observedRangeText;
   if (!result || result.grade === 'skipped') {
     return 'This screen was skipped — not treated as a limitation.';
   }
@@ -117,7 +118,7 @@ export function screenReport(results: TpiResults) {
       leftGrade: result?.leftGrade,
       rightGrade: result?.rightGrade,
       recognized: result?.recognized,
-      typicalRange: typicalRangeCopy(test),
+      typicalRange: typicalRangeCopy(test, result),
       observedRange: observedRangeCopy(test, result),
     };
   });

@@ -4,22 +4,27 @@ import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { base64ToBytes } from '../services/physicalAssessCore';
+import { bodyInFrameFromJpegBytes } from '../services/poseVision';
+import type { BodyTarget } from '../types';
 import { colors, fonts } from '../theme';
 import { Button } from './ui';
 
-export type CaptureStatus = 'idle' | 'countdown' | 'recording' | 'done';
+export type CaptureStatus = 'idle' | 'finding' | 'countdown' | 'recording' | 'done';
 
 export function GuidedRecorder({
   hint,
   facingHint,
   autoStart = false,
   recordSeconds = 8,
+  bodyTarget = 'torso',
   onRecorded,
 }: {
   hint: string;
   facingHint: 'front' | 'side' | 'behind';
   autoStart?: boolean;
   recordSeconds?: number;
+  bodyTarget?: BodyTarget;
   onRecorded: (uri: string) => void;
 }) {
   const cameraRef = useRef<CameraView>(null);
@@ -34,6 +39,7 @@ export function GuidedRecorder({
   const [facing, setFacing] = useState<'back' | 'front'>('front');
   const [count, setCount] = useState<number | null>(null);
   const [status, setStatus] = useState<CaptureStatus>('idle');
+  const [findHint, setFindHint] = useState('Finding you… hips and shoulders in the box.');
   const live = Platform.OS !== 'web' && Boolean(camPerm?.granted && micPerm?.granted);
 
   const ensurePermissions = async () => {
@@ -55,6 +61,34 @@ export function GuidedRecorder({
     }
   };
 
+  const waitForBody = async () => {
+    if (Platform.OS === 'web' || !cameraRef.current?.takePictureAsync) return;
+    setStatus('finding');
+    setFindHint('Finding you… hips and shoulders in the box.');
+    const deadline = Date.now() + 8000;
+    while (Date.now() < deadline && !cancelledRef.current) {
+      try {
+        const snap = await cameraRef.current.takePictureAsync({
+          quality: 0.35,
+          base64: true,
+          skipProcessing: true,
+          shutterSound: false,
+        });
+        if (!snap?.base64) break;
+        const check = bodyInFrameFromJpegBytes(base64ToBytes(snap.base64), bodyTarget);
+        if (check.ok) {
+          setFindHint('Got you. Hold still.');
+          await delay(280);
+          return;
+        }
+        setFindHint(check.hint);
+      } catch {
+        return;
+      }
+      await delay(400);
+    }
+  };
+
   const runCountdownAndRecord = async () => {
     if (startedRef.current || uri) return;
     startedRef.current = true;
@@ -71,6 +105,8 @@ export function GuidedRecorder({
       return;
     }
     try {
+      await waitForBody();
+      if (cancelledRef.current) return;
       setStatus('countdown');
       for (const value of [3, 2, 1]) {
         if (cancelledRef.current) return;
@@ -141,11 +177,13 @@ export function GuidedRecorder({
   }, [recording, recordSeconds]);
 
   const overlay =
-    status === 'countdown' && count
-      ? String(count)
-      : status === 'recording'
-        ? `REC  0:${String(remaining).padStart(2, '0')}`
-        : null;
+    status === 'finding'
+      ? findHint
+      : status === 'countdown' && count
+        ? String(count)
+        : status === 'recording'
+          ? `REC  0:${String(remaining).padStart(2, '0')}`
+          : null;
 
   return (
     <View style={styles.wrap}>
@@ -176,7 +214,9 @@ export function GuidedRecorder({
         )}
         {overlay ? (
           <View style={styles.overlay} pointerEvents="none">
-            <Text style={status === 'countdown' ? styles.count : styles.prompt}>{overlay}</Text>
+            <Text style={status === 'countdown' ? styles.count : status === 'finding' ? styles.find : styles.prompt}>
+              {overlay}
+            </Text>
           </View>
         ) : null}
         <View style={styles.caption}>
@@ -211,7 +251,7 @@ export function GuidedRecorder({
           label={recording ? 'Recording video…' : 'Start 3-2-1 video'}
           onPress={() => void runCountdownAndRecord()}
           variant={recording ? 'secondary' : 'primary'}
-          disabled={recording || status === 'countdown'}
+          disabled={recording || status === 'countdown' || status === 'finding'}
         />
       ) : null}
       {!uri ? (
@@ -262,6 +302,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.display,
     fontSize: 36,
     color: colors.cream,
+  },
+  find: {
+    fontFamily: fonts.bodyMedium,
+    fontSize: 22,
+    color: colors.cream,
+    textAlign: 'center',
+    paddingHorizontal: 24,
   },
   caption: {
     position: 'absolute',

@@ -1,21 +1,12 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import * as VideoThumbnails from 'expo-video-thumbnails';
-import jpeg from 'jpeg-js';
-import { referenceMotion } from '../data/referenceMotions';
 import { screenMeta } from '../data/physicalScreenMeta';
 import type { TpiTest } from '../data/tpi';
 import type { TpiResult } from '../types';
-import {
-  base64ToBytes,
-  compareToReference,
-  extractMotionClip,
-  grayFromJpegBytes,
-  rationaleFor,
-  sampleTimesMs,
-  skippedResult,
-  unclearResult,
-  type GrayFrame,
-} from './physicalAssessCore';
+import { estimatePosesFromFrames } from './poseEstimate';
+import { poseResult, scorePoseScreen } from './poseMetrics';
+import { rgbFromJpegBytes } from './poseVision';
+import { base64ToBytes, sampleTimesMs, skippedResult, unclearResult } from './physicalAssessCore';
 
 export {
   compareToReference,
@@ -28,46 +19,36 @@ export {
 
 export async function assessPhysicalClip(test: TpiTest, videoUri: string): Promise<TpiResult> {
   try {
-    const frames = await framesFromVideo(videoUri, screenMeta(test.key).recordSeconds);
+    const duration = screenMeta(test.key).recordSeconds;
+    const frames = await rgbFramesFromVideo(videoUri, duration);
     if (frames.length < 3) {
       return unclearResult(test, videoUri);
     }
-    const clip = extractMotionClip(frames);
-    const match = compareToReference(clip, referenceMotion(test.key));
-    return {
-      key: test.key,
-      videoUri,
-      remoteUrl: null,
-      notes: '',
-      assessedBy: 'ai',
-      recognized: match.recognized,
-      grade: match.recognized ? match.grade : 'skipped',
-      leftGrade: match.recognized ? match.leftGrade : undefined,
-      rightGrade: match.recognized ? match.rightGrade : undefined,
-      rationale: rationaleFor(test, match),
-    };
+    const estimated = await estimatePosesFromFrames(frames);
+    const score = scorePoseScreen(
+      test,
+      estimated.map((item) => item.pose),
+      estimated.map((item) => item.quality),
+      duration,
+    );
+    return poseResult(test, videoUri, score);
   } catch {
     return unclearResult(test, videoUri);
   }
 }
 
-async function framesFromVideo(videoUri: string, durationSec: number): Promise<GrayFrame[]> {
+async function rgbFramesFromVideo(videoUri: string, durationSec: number) {
   const stamps = sampleTimesMs(durationSec);
-  const frames: GrayFrame[] = [];
+  const frames = [];
   for (const time of stamps) {
-    const thumb = await VideoThumbnails.getThumbnailAsync(videoUri, { time, quality: 0.45 });
-    const frame = await grayFromImageUri(thumb.uri);
-    if (frame) frames.push(frame);
+    const thumb = await VideoThumbnails.getThumbnailAsync(videoUri, { time, quality: 0.55 });
+    const resized = await manipulateAsync(thumb.uri, [{ resize: { width: 256 } }], {
+      compress: 0.7,
+      format: SaveFormat.JPEG,
+      base64: true,
+    });
+    if (!resized.base64) continue;
+    frames.push(rgbFromJpegBytes(base64ToBytes(resized.base64)));
   }
   return frames;
-}
-
-async function grayFromImageUri(uri: string): Promise<GrayFrame | null> {
-  const resized = await manipulateAsync(uri, [{ resize: { width: 48, height: 48 } }], {
-    compress: 0.8,
-    format: SaveFormat.JPEG,
-    base64: true,
-  });
-  if (!resized.base64) return null;
-  return grayFromJpegBytes(base64ToBytes(resized.base64), (raw) => jpeg.decode(raw, { useTArray: true }));
 }

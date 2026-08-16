@@ -34,7 +34,7 @@ export function meanAbsDiff(a: Float32Array, b: Float32Array): number {
 }
 
 export function sampleTimesMs(durationSec: number): number[] {
-  const count = Math.min(12, Math.max(8, Math.round(durationSec * 1.25)));
+  const count = Math.min(20, Math.max(10, Math.round(durationSec * 2)));
   const span = Math.max(durationSec * 1000 - 280, 900);
   return Array.from({ length: count }, (_, index) => Math.round((index / (count - 1)) * span));
 }

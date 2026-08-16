@@ -83,8 +83,9 @@ export function PhysicalScreenWalkthrough({
         <Kicker>Physical Screen</Kicker>
         <Title>16 movements. Your range, not a pose.</Title>
         <Body>
-          Use the front camera so you can see the countdown and yourself. After each motion you get a result. If the
-          clip does not look like the exercise, Clarity will say so and show a tutorial before you try again.
+          Use the front camera so you can see the countdown and yourself. Recording waits until hips and shoulders are
+          in the box, then 3-2-1. After each motion you get typical range vs yours. If Clarity cannot see you, it will
+          say so and show a tutorial — a short real motion is still scored, not treated as the wrong exercise.
         </Body>
         <Card>
           <Body muted>
@@ -104,7 +105,7 @@ export function PhysicalScreenWalkthrough({
           Screen {test.number} / {TPI_TESTS.length}
         </Kicker>
         <Title>Reading your video</Title>
-        <Body muted>Checking whether this clip is the {test.title.toLowerCase()} motion, then measuring range.</Body>
+        <Body muted>Checking that we can see you, then measuring how far the motion traveled.</Body>
         <ActivityIndicator color={colors.gold} />
       </View>
     );
@@ -146,7 +147,7 @@ export function PhysicalScreenWalkthrough({
         <Title>{test.title}</Title>
         <Card>
           <Kicker>Typical range of motion</Kicker>
-          <Body>{typicalRangeCopy(test)}</Body>
+          <Body>{typicalRangeCopy(test, current)}</Body>
         </Card>
         <Card>
           <Kicker>Your range of motion</Kicker>
@@ -193,13 +194,14 @@ export function PhysicalScreenWalkthrough({
           Screen {test.number} / {TPI_TESTS.length} · {test.region}
         </Kicker>
         <Title>{test.title}</Title>
-        <Body muted>You should see yourself and a 3-2-1. Then move through the motion. The video stops on its own.</Body>
+        <Body muted>You should see yourself. We wait until you are in the box, then 3-2-1. Move through the motion. The video stops on its own.</Body>
         <GuidedRecorder
           key={`${test.key}-${captureKey}`}
           facingHint={test.camera}
           hint={test.setup[test.setup.length - 1] ?? ''}
           autoStart
           recordSeconds={meta.recordSeconds}
+          bodyTarget={meta.bodyTarget}
           onRecorded={(videoUri) => {
             void onClip(videoUri);
           }}

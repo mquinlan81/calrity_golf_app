@@ -26,6 +26,8 @@ export type TpiTestKey =
   | 'wrist_flexion'
   | 'reach_roll_lift';
 
+export type BodyTarget = 'full' | 'torso' | 'upper' | 'hands' | 'floor';
+
 export interface TpiResult {
   key: TpiTestKey;
   grade: TpiGrade;
@@ -37,6 +39,9 @@ export interface TpiResult {
   rationale?: string;
   assessedBy?: 'ai' | 'skipped';
   recognized?: boolean;
+  typicalRangeText?: string;
+  observedRangeText?: string;
+  observedDegrees?: number;
 }
 
 export type TpiResults = Partial<Record<TpiTestKey, TpiResult>>;

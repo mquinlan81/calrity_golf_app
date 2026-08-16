@@ -45,7 +45,7 @@ export default function CompleteScreen() {
             <Kicker>
               {test.number}. {test.title} · {physicalGradeLabel(result?.recognized === false ? 'skipped' : result?.grade ?? 'skipped')}
             </Kicker>
-            <Body muted>Typical range of motion should be: {typicalRangeCopy(test)}</Body>
+            <Body muted>Typical range of motion should be: {typicalRangeCopy(test, result)}</Body>
             <Body>Your range of motion was: {observedRangeCopy(test, result)}</Body>
           </Card>
         );
