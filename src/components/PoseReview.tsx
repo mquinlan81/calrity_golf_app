@@ -1,6 +1,6 @@
 import { ResizeMode, Video } from 'expo-av';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import {
   formatMetricValue,
   kinematicsSeries,
@@ -14,7 +14,7 @@ import { emptyPose } from '../services/poseTypes';
 import type { MeasurementSystem } from '../services/units';
 import type { TpiTestKey } from '../types';
 import { colors, fonts } from '../theme';
-import { SkeletonOverlay, SkeletonStudio } from './SkeletonStudio';
+import { SkeletonOverlay } from './SkeletonStudio';
 
 export function PoseReview({
   videoUri,
@@ -34,9 +34,10 @@ export function PoseReview({
   const videoRef = useRef<Video>(null);
   const barWidth = useRef(1);
   const poses = useMemo(() => (trace ? unpackPoses(trace) : []), [trace]);
+  const locked = trace?.tracking === 'joints';
   const series = useMemo(
-    () => (poses.length ? kinematicsSeries(poses, heightCm, trace?.aspect ?? 0.75) : null),
-    [poses, heightCm, trace?.aspect],
+    () => (locked && poses.length ? kinematicsSeries(poses, heightCm, trace?.aspect ?? 0.75) : null),
+    [locked, poses, heightCm, trace?.aspect],
   );
   const peaks = useMemo(() => (series ? peakRange(series.frames) : null), [series]);
   const [index, setIndex] = useState(0);
@@ -61,98 +62,82 @@ export function PoseReview({
     }
   };
 
-  if (!trace || !poses.length) {
-    return videoUri ? (
-      <Video source={{ uri: videoUri }} style={styles.solo} resizeMode={ResizeMode.CONTAIN} useNativeControls isMuted />
-    ) : null;
-  }
+  if (!videoUri) return null;
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.split}>
-        <View style={styles.pane}>
-          {videoUri ? (
-            <Video
-              ref={videoRef}
-              source={{ uri: videoUri }}
-              style={StyleSheet.absoluteFill}
-              resizeMode={ResizeMode.CONTAIN}
-              shouldPlay={autoPlay}
-              isLooping={autoPlay}
-              isMuted
-              progressUpdateIntervalMillis={80}
-              onPlaybackStatusUpdate={(status) => {
-                if (!status.isLoaded || !times.length || !status.isPlaying) return;
-                const ms = status.positionMillis ?? 0;
-                let best = 0;
-                let dist = Infinity;
-                times.forEach((time, i) => {
-                  const gap = Math.abs(time - ms);
-                  if (gap < dist) {
-                    dist = gap;
-                    best = i;
-                  }
-                });
-                setIndex(best);
-              }}
-            />
-          ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.ink }]} />
-          )}
-          <SkeletonOverlay pose={pose} aspect={trace.aspect} />
-        </View>
-        <View style={styles.pane}>
-          <SkeletonStudio pose={pose} />
-        </View>
+      <View style={styles.stage}>
+        <Video
+          ref={videoRef}
+          source={{ uri: videoUri }}
+          style={StyleSheet.absoluteFill}
+          resizeMode={ResizeMode.CONTAIN}
+          shouldPlay={autoPlay}
+          isLooping={autoPlay}
+          isMuted
+          progressUpdateIntervalMillis={80}
+          onPlaybackStatusUpdate={(status) => {
+            if (!status.isLoaded || !times.length || !status.isPlaying) return;
+            const ms = status.positionMillis ?? 0;
+            let best = 0;
+            let dist = Infinity;
+            times.forEach((time, i) => {
+              const gap = Math.abs(time - ms);
+              if (gap < dist) {
+                dist = gap;
+                best = i;
+              }
+            });
+            setIndex(best);
+          }}
+        />
+        {locked ? <SkeletonOverlay pose={pose} aspect={trace?.aspect ?? 0.56} /> : null}
       </View>
-      <Pressable
-        style={styles.scrub}
-        onLayout={(event) => {
-          barWidth.current = event.nativeEvent.layout.width;
-        }}
-        onPress={(event) => {
-          const x = event.nativeEvent.locationX;
-          const next = Math.round((x / barWidth.current) * (Math.max(poses.length, 1) - 1));
-          seekTo(next);
-        }}
-      >
-        <View style={styles.track}>
-          <View
-            style={[
-              styles.fill,
-              { width: `${poses.length < 2 ? 0 : (index / (poses.length - 1)) * 100}%` },
-            ]}
-          />
-        </View>
-        <View style={styles.ticks}>
-          {poses.map((_, i) => (
-            <View key={i} style={[styles.tick, i === index && styles.tickOn]} />
+      {poses.length > 1 ? (
+        <Pressable
+          style={styles.scrub}
+          onLayout={(event) => {
+            barWidth.current = event.nativeEvent.layout.width;
+          }}
+          onPress={(event) => {
+            const x = event.nativeEvent.locationX;
+            const next = Math.round((x / barWidth.current) * (Math.max(poses.length, 1) - 1));
+            seekTo(next);
+          }}
+        >
+          <View style={styles.track}>
+            <View
+              style={[
+                styles.fill,
+                { width: `${poses.length < 2 ? 0 : (index / (poses.length - 1)) * 100}%` },
+              ]}
+            />
+          </View>
+          <Text style={styles.time}>
+            {(stamp / 1000).toFixed(1)}s / {(duration / 1000).toFixed(1)}s · tap to scrub
+          </Text>
+        </Pressable>
+      ) : null}
+      {cards.length ? (
+        <View style={styles.cards}>
+          {cards.map((card) => (
+            <View key={card.key} style={styles.card}>
+              <Text style={styles.cardLabel}>{card.label}</Text>
+              <Text style={styles.cardValue}>{formatMetricValue(card.value, card.unit, metric)}</Text>
+              {card.range != null && card.typical != null ? (
+                <Text style={styles.cardRange}>
+                  Range {formatMetricValue(card.range, card.unit, metric).replace(/^[+-]/, '')} · typical{' '}
+                  {formatMetricValue(card.typical, card.unit, metric).replace(/^[+-]/, '')}
+                </Text>
+              ) : null}
+            </View>
           ))}
         </View>
-        <Text style={styles.time}>
-          {(stamp / 1000).toFixed(1)}s / {(duration / 1000).toFixed(1)}s
-        </Text>
-      </Pressable>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cards}>
-        {cards.map((card) => (
-          <View key={card.key} style={[styles.card, card.primary && styles.cardPrimary]}>
-            <Text style={styles.cardLabel}>{card.label}</Text>
-            <Text style={styles.cardValue}>{formatMetricValue(card.value, card.unit, metric)}</Text>
-            {card.range != null ? (
-              <Text style={styles.cardRange}>
-                Range {formatMetricValue(card.range, card.unit, metric).replace(/^[+-]/, '')}
-                {card.typical != null
-                  ? ` · typ ${formatMetricValue(card.typical, card.unit, metric).replace(/^[+-]/, '')}`
-                  : ''}
-              </Text>
-            ) : null}
-          </View>
-        ))}
-      </ScrollView>
+      ) : null}
       <Text style={styles.note}>
-        {trace.tracking === 'joints'
-          ? 'Purple dots are joints. Gold lines are hip line, shoulder line, and spine to the ground. Numbers are this frame; range is the whole clip.'
-          : 'Purple dots follow your silhouette. Gold lines are hip line, shoulder line, and spine. A plain wall behind you helps the joints lock on.'}
+        {locked
+          ? 'Dots sit on the joints we found in this frame. Gold is hip line, shoulder line, and spine.'
+          : 'Could not lock joints onto your body in this clip. A plain wall and more light help.'}
       </Text>
     </View>
   );
@@ -160,32 +145,26 @@ export function PoseReview({
 
 const styles = StyleSheet.create({
   wrap: { gap: 10 },
-  split: {
-    height: 248,
+  stage: {
+    height: 420,
     borderRadius: 16,
     overflow: 'hidden',
-    flexDirection: 'row',
     backgroundColor: colors.ink,
   },
-  pane: { flex: 1, overflow: 'hidden' },
-  solo: { width: '100%', height: 200, borderRadius: 12, backgroundColor: colors.ink },
   scrub: { gap: 6, paddingHorizontal: 4 },
   track: { height: 4, borderRadius: 2, backgroundColor: colors.fog, overflow: 'hidden' },
   fill: { height: 4, backgroundColor: '#9B6BFF' },
-  ticks: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 12 },
-  tick: { width: 2, height: 7, backgroundColor: colors.mist, borderRadius: 1 },
-  tickOn: { height: 12, backgroundColor: colors.gold },
   time: { fontFamily: fonts.body, fontSize: 12, color: colors.muted },
-  cards: { gap: 8, paddingVertical: 2 },
+  cards: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   card: {
-    minWidth: 118,
+    flexGrow: 1,
+    minWidth: '46%',
     backgroundColor: colors.ink,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
     gap: 2,
   },
-  cardPrimary: { borderWidth: 1, borderColor: colors.gold },
   cardLabel: {
     fontFamily: fonts.bodyMedium,
     fontSize: 10,
@@ -197,3 +176,4 @@ const styles = StyleSheet.create({
   cardRange: { fontFamily: fonts.body, fontSize: 11, color: colors.mist },
   note: { fontFamily: fonts.body, fontSize: 12, color: colors.muted, lineHeight: 16 },
 });
+

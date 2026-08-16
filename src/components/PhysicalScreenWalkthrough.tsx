@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { TPI_TESTS } from '../data/tpi';
 import { screenMeta } from '../data/physicalScreenMeta';
-import { assessPhysicalClip, skippedResult } from '../services/physicalAssess';
+import { assessPhysicalClip, skippedResult, warmupMoveNet } from '../services/physicalAssess';
 import { defaultResult, observedRangeCopy, physicalGradeLabel, typicalRangeCopy } from '../services/tpi';
 import { colors } from '../theme';
 import type { TpiResult, TpiResults } from '../types';
@@ -37,6 +37,11 @@ export function PhysicalScreenWalkthrough({
   const nextTest = index < TPI_TESTS.length - 1 ? TPI_TESTS[index + 1] : null;
   const recognized = current.recognized !== false && current.grade !== 'skipped';
   const mismatch = current.recognized === false && Boolean(current.videoUri);
+  const noJoints = mismatch && current.poseTrace?.tracking !== 'joints';
+
+  useEffect(() => {
+    void warmupMoveNet();
+  }, []);
 
   const commit = (partial: Partial<TpiResult> = {}) => {
     const next = {
@@ -87,10 +92,9 @@ export function PhysicalScreenWalkthrough({
         <Kicker>Physical Screen</Kicker>
         <Title>16 movements. Your range, not a pose.</Title>
         <Body>
-          Use the front camera so you can see the countdown and yourself. After each clip you get a split view: your
-          video with joint dots, a skeleton of how those joints moved, and numbers for pelvis sway, chest side bend,
-          spine angle, and lift — like a 2D version of a 3D swing studio. Restricted and free motion should show
-          different ranges.
+          After each clip the skeleton is drawn on your video — dots on the joints we found, gold lines for hips,
+          shoulders, and spine. Only the numbers that matter for that screen sit underneath. A plain wall and full body
+          in frame help the joints lock on.
         </Body>
         <Card>
           <Body muted>
@@ -109,8 +113,8 @@ export function PhysicalScreenWalkthrough({
         <Kicker>
           Screen {test.number} / {TPI_TESTS.length}
         </Kicker>
-        <Title>Reading your video</Title>
-        <Body muted>Mapping joints, then measuring sway, side bend, and spine angle through the clip.</Body>
+        <Title>Locking onto joints</Title>
+        <Body muted>Finding hips, shoulders, and limbs in your video. First time can take a few extra seconds.</Body>
         <ActivityIndicator color={colors.gold} />
       </View>
     );
@@ -123,10 +127,11 @@ export function PhysicalScreenWalkthrough({
           <Kicker>
             Screen {test.number} / {TPI_TESTS.length}
           </Kicker>
-          <Title>That did not appear correct</Title>
+          <Title>{noJoints ? 'Could not lock onto your joints' : 'That did not appear correct'}</Title>
           <Body>
-            Clarity did not see the {test.title.toLowerCase()} motion it was expecting. This is not a range score yet.
-            Watch the tutorial, then try again.
+            {noJoints
+              ? 'The skeleton has to sit on your body before we score range. Step back, use a plain wall, and more light, then try again.'
+              : `Clarity did not see the ${test.title.toLowerCase()} motion it was expecting. This is not a range score yet. Watch the tutorial, then try again.`}
           </Body>
           <PhysicalScreenFigure testKey={test.key} title="Video tutorial" intervalMs={1100} />
           <Card>

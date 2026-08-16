@@ -5,6 +5,7 @@ import {
   frameKinematics,
   kinematicsSeries,
   lengthScale,
+  metricCards,
   packPoseTrace,
   peakRange,
   unpackPoses,
@@ -57,5 +58,15 @@ describe('joint kinematics', () => {
     assert.equal(trace.tracking, 'joints');
     const [restored] = unpackPoses(trace);
     assert.ok(Math.abs(restored.keypoints[0].x - pose.keypoints[0].x) < 0.002);
+  });
+
+  it('only lists the stats that belong to that screen', () => {
+    const series = kinematicsSeries([lean(-8), lean(0), lean(8)], 178, 0.75);
+    assert.ok(series);
+    const cards = metricCards('pelvic_tilt', series.frames[1], peakRange(series.frames));
+    assert.deepEqual(
+      cards.map((card) => card.label),
+      ['Spine angle', 'Pelvis lift'],
+    );
   });
 });

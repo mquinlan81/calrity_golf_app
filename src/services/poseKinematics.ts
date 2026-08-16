@@ -161,86 +161,55 @@ export function peakRange(frames: FrameKinematics[]): Record<keyof FrameKinemati
 const CARD_DEFS: Record<TpiTestKey, Array<{ key: keyof FrameKinematics; label: string; unit: MetricUnit; typical?: number; primary?: boolean }>> = {
   pelvic_tilt: [
     { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg', typical: 25, primary: true },
-    { key: 'pelvisSideBendDeg', label: 'Pelvis side bend', unit: 'deg', typical: 15 },
-    { key: 'chestSideBendDeg', label: 'Chest side bend', unit: 'deg', typical: 8 },
-    { key: 'pelvisLiftIn', label: 'Pelvis lift', unit: 'in', typical: 2 },
-    { key: 'pelvisSwayIn', label: 'Pelvis sway', unit: 'in', typical: 2 },
+    { key: 'pelvisLiftIn', label: 'Pelvis lift', unit: 'in', typical: 2, primary: true },
   ],
   pelvic_rotation: [
     { key: 'pelvisTurnDeg', label: 'Pelvis turn', unit: 'deg', typical: 45, primary: true },
-    { key: 'chestTurnDeg', label: 'Chest turn', unit: 'deg', typical: 10 },
-    { key: 'pelvisSwayIn', label: 'Pelvis sway', unit: 'in', typical: 3 },
-    { key: 'pelvisSideBendDeg', label: 'Pelvis side bend', unit: 'deg' },
-    { key: 'chestSideBendDeg', label: 'Chest side bend', unit: 'deg' },
+    { key: 'chestTurnDeg', label: 'Chest turn', unit: 'deg', typical: 10, primary: true },
   ],
   torso_rotation: [
     { key: 'chestTurnDeg', label: 'Chest turn', unit: 'deg', typical: 50, primary: true },
-    { key: 'pelvisTurnDeg', label: 'Pelvis turn', unit: 'deg', typical: 10 },
-    { key: 'chestSideBendDeg', label: 'Chest side bend', unit: 'deg' },
-    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg' },
-    { key: 'chestSwayIn', label: 'Chest sway', unit: 'in' },
+    { key: 'pelvisTurnDeg', label: 'Pelvis turn', unit: 'deg', typical: 10, primary: true },
   ],
   overhead_deep_squat: [
     { key: 'kneeFlexDeg', label: 'Knee flex', unit: 'deg', typical: 90, primary: true },
-    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg' },
-    { key: 'pelvisLiftIn', label: 'Pelvis lift', unit: 'in' },
-    { key: 'chestSwayIn', label: 'Chest sway', unit: 'in' },
+    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg', typical: 20, primary: true },
   ],
   toe_touch: [
     { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg', typical: 80, primary: true },
-    { key: 'pelvisLiftIn', label: 'Pelvis lift', unit: 'in' },
-    { key: 'kneeFlexDeg', label: 'Knee flex', unit: 'deg' },
   ],
   ninety_ninety: [
-    { key: 'chestTurnDeg', label: 'Chest turn', unit: 'deg', typical: 10 },
-    { key: 'chestSideBendDeg', label: 'Chest side bend', unit: 'deg', typical: 8, primary: true },
-    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg' },
+    { key: 'chestSideBendDeg', label: 'Arm rotation', unit: 'deg', typical: 80, primary: true },
   ],
   single_leg_balance: [
     { key: 'pelvisSwayIn', label: 'Pelvis sway', unit: 'in', typical: 2, primary: true },
-    { key: 'chestSwayIn', label: 'Chest sway', unit: 'in' },
-    { key: 'pelvisSideBendDeg', label: 'Pelvis side bend', unit: 'deg' },
   ],
   lat_length: [
-    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg', typical: 15 },
-    { key: 'chestSideBendDeg', label: 'Chest side bend', unit: 'deg', primary: true, typical: 10 },
-    { key: 'pelvisLiftIn', label: 'Pelvis lift', unit: 'in' },
+    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg', typical: 15, primary: true },
   ],
   lower_quarter_rotation: [
-    { key: 'pelvisTurnDeg', label: 'Pelvis turn', unit: 'deg', typical: 40, primary: true },
-    { key: 'kneeFlexDeg', label: 'Knee flex', unit: 'deg' },
-    { key: 'pelvisSwayIn', label: 'Pelvis sway', unit: 'in' },
+    { key: 'pelvisTurnDeg', label: 'Hip turn', unit: 'deg', typical: 40, primary: true },
   ],
   seated_trunk_rotation: [
     { key: 'chestTurnDeg', label: 'Chest turn', unit: 'deg', typical: 45, primary: true },
-    { key: 'pelvisTurnDeg', label: 'Pelvis turn', unit: 'deg', typical: 8 },
-    { key: 'chestSideBendDeg', label: 'Chest side bend', unit: 'deg' },
   ],
   cervical_rotation: [
-    { key: 'chestTurnDeg', label: 'Chest turn', unit: 'deg', typical: 8 },
-    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg', primary: true, typical: 20 },
-    { key: 'chestSideBendDeg', label: 'Chest side bend', unit: 'deg' },
+    { key: 'spineAngleDeg', label: 'Head turn', unit: 'deg', typical: 70, primary: true },
   ],
   bridge_leg_extension: [
     { key: 'pelvisLiftIn', label: 'Pelvis lift', unit: 'in', typical: 6, primary: true },
-    { key: 'kneeFlexDeg', label: 'Knee flex', unit: 'deg' },
-    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg' },
   ],
   forearm_rotation: [
-    { key: 'chestTurnDeg', label: 'Chest turn', unit: 'deg' },
-    { key: 'chestSideBendDeg', label: 'Chest side bend', unit: 'deg', primary: true },
+    { key: 'chestSideBendDeg', label: 'Forearm turn', unit: 'deg', typical: 90, primary: true },
   ],
   wrist_hinge: [
-    { key: 'chestSideBendDeg', label: 'Forearm line', unit: 'deg', primary: true, typical: 70 },
-    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg' },
+    { key: 'chestSideBendDeg', label: 'Wrist hinge', unit: 'deg', typical: 70, primary: true },
   ],
   wrist_flexion: [
-    { key: 'chestSideBendDeg', label: 'Forearm line', unit: 'deg', primary: true, typical: 75 },
-    { key: 'spineAngleDeg', label: 'Spine angle', unit: 'deg' },
+    { key: 'chestSideBendDeg', label: 'Wrist nod', unit: 'deg', typical: 75, primary: true },
   ],
   reach_roll_lift: [
-    { key: 'pelvisLiftIn', label: 'Lift', unit: 'in', typical: 1.5, primary: true },
-    { key: 'chestSwayIn', label: 'Chest sway', unit: 'in' },
+    { key: 'pelvisLiftIn', label: 'Arm lift', unit: 'in', typical: 1.5, primary: true },
   ],
 };
 
@@ -249,11 +218,13 @@ export function metricCards(
   current: FrameKinematics,
   peaks: Record<keyof FrameKinematics, number>,
 ): MetricCard[] {
-  return CARD_DEFS[key].map((def) => ({
-    ...def,
-    value: current[def.key],
-    range: peaks[def.key],
-  }));
+  return CARD_DEFS[key]
+    .filter((def) => def.primary)
+    .map((def) => ({
+      ...def,
+      value: current[def.key],
+      range: peaks[def.key],
+    }));
 }
 
 export function formatMetricValue(value: number, unit: MetricUnit, metric: boolean): string {
